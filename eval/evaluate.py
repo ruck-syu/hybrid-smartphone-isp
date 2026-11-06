@@ -27,6 +27,9 @@ CROP = 1024  # full-res crop size
 
 def test_crops(root: Path, per_image: int, split: str = "test"):
     recs = [r for r in json.load(open(root / "index.json")) if r["split"] == split]
+    for r in recs:  # iPhone DNGs lack ISO metadata; SIDD folder names carry it (field 4)
+        if not r["iso"]:
+            r["iso"] = float(r["name"].split("_")[3])
     for r in recs:
         noisy = np.load(root / f"{r['id']}_{r['k']}_noisy.npy", mmap_mode="r")
         gt = np.load(root / f"{r['id']}_gt.npy", mmap_mode="r")

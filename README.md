@@ -2,8 +2,8 @@
 
 **Problem P2: Intelligent and Computationally Efficient Smartphone ISP** (CV Hackathon 2026)
 
-- **Live demo:** LIVE_URL
-- **Results:** [`eval/RESULTS.md`](eval/RESULTS.md) · submission summary [`eval_P2_TEAMID.md`](eval_P2_TEAMID.md)
+- **Live demo:** https://hybrid-isp-production.up.railway.app
+- **Results:** [`eval/RESULTS.md`](eval/RESULTS.md) · submission summary [`eval_P2_TXX.md`](eval_P2_TXX.md)
 - **Design document:** [`docs/DESIGN.md`](docs/DESIGN.md) · **Failure analysis:** [`docs/FAILURE_ANALYSIS.md`](docs/FAILURE_ANALYSIS.md)
 
 ![architecture](docs/architecture/hybrid-isp.png)
@@ -81,7 +81,7 @@ python eval/evaluate.py --data data/prep --models models --tag main
 python eval/evaluate.py --data data/prep --models models --tag robust --robustness \
        --methods classical_bilateral,learned,hybrid_teacher,hybrid_student,hybrid_student_int8
 python eval/benchmark.py --models models --sizes 1024,2048
-python eval/make_report.py --team TEAMID --usns "..."
+python eval/make_report.py --team TXX --usns "..."
 ```
 
 Train / val / test are split **by scene content** (test = SIDD scenes 003 and 010), so no test scene,

@@ -75,13 +75,34 @@ def eff_table(eff):
     return "\n".join(out)
 
 
+def merged_summary(prefix):
+    """Merge rows_<prefix>*.json files (methods evaluated in separate runs) and summarise."""
+    import sys
+    sys.path.insert(0, str(R.parents[1]))
+    from collections import defaultdict
+    from eval.evaluate import iso_bucket, summarise
+    rows = []
+    for f in sorted(R.glob(f"rows_{prefix}*.json")):
+        rows += json.load(open(f))
+    if not rows:
+        return None
+    conds = sorted({r["condition"] for r in rows}, key=lambda c: (c != "clean", c))
+    clean = [r for r in rows if r["condition"] == "clean"]
+    return {"conditions": {c: summarise([r for r in rows if r["condition"] == c]) for c in conds},
+            "by_iso": {b: summarise([r for r in clean if iso_bucket(r["iso"]) == b])
+                       for b in ("ISO<=400", "ISO 800-1600", "ISO>=3200")},
+            "by_camera": {cam: summarise([r for r in clean if r["camera"] == cam])
+                          for cam in sorted({r["camera"] for r in clean})},
+            "n_crops": len({(r["id"], r["k"], r["crop"]) for r in clean})}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--team", default="TXX")
     ap.add_argument("--usns", default="USN1,USN2,USN3,USN4")
     a = ap.parse_args()
-    main_s = json.load(open(R / "summary_main.json"))
-    rob = json.load(open(R / "summary_robust.json")) if (R / "summary_robust.json").exists() else None
+    main_s = merged_summary("main")
+    rob = merged_summary("robust")
     eff = json.load(open(R / "efficiency.json")) if (R / "efficiency.json").exists() else None
     clean = main_s["conditions"]["clean"]
     md = [f"# Evaluation results — P2 Hybrid Smartphone ISP\n",
