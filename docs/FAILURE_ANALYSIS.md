@@ -159,7 +159,23 @@ Fine-detail energy (Laplacian variance of luma) was 5–6× lower.
    recovered from 17% to 66–85% of the traditional ISP's.
 2. The app now develops a native-resolution 1:1 centre crop by default. "Whole frame" (binned) is
    an option.
-3. Not done yet: retraining with scale augmentation and an edge/gradient loss, the proper long-term fix.
+3. Tried: fine-tuning the deployed student with scale augmentation (50% of patches binned 2×, GT
+   downscaled in linear light) and an L1 image-gradient loss (`--scale_prob 0.5 --grad_w 0.5|1.0`,
+   init from the deployed student, lr 1e-4, 110 min on a Kaggle T4). Validation only
+   (`eval/results/detail_finetune_comparison.json`, `scripts/compare_detail_models.py`):
+
+   | Model | PSNR native | LPIPS native | PSNR 2×-binned | LPIPS 2×-binned | Detail on unseen DNGs, network only (traditional = 6.15) |
+   |---|---|---|---|---|---|
+   | Deployed student | **43.69** | 0.105 | 41.18 | 0.104 | 2.38 (39%) |
+   | Fine-tune, grad_w 0.5 | 43.27 | **0.102** | 42.28 | 0.082 | **3.34 (54%)** |
+   | Fine-tune, grad_w 1.0 | 43.28 | 0.103 | **42.32** | **0.081** | 3.33 (54%) |
+
+   The approach works: +1.1 dB and −22% LPIPS on sharp-per-pixel inputs, about 40% more real detail
+   from the network on unseen phones. It costs 0.41 dB on native SIDD crops, mostly because sharper
+   output is penalised by SIDD's soft ground truth. The runs are also undertrained (36–40k iterations,
+   against 131k for the deployed model, since binned patches load 4× more data). We kept the deployed
+   model because native PSNR is a headline metric and the detail-restoration stage already covers clean
+   photos; a longer run with a lower binning probability is the next step.
 
 ## 10. Our system: dependence on camera metadata
 
