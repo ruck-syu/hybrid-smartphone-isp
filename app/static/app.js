@@ -81,6 +81,7 @@ function renderPipes() {
     const l = document.createElement("label");
     l.className = "pipe";
     l.style.setProperty("--c", COLORS[p.id] || "var(--muted)");
+    l.title = p.description;
     l.innerHTML = `<input type="checkbox" value="${p.id}" ${on.has(p.id) ? "checked" : ""}>
       <b>${p.name}${p.id === "hybrid" ? " (ours)" : ""}</b><small>${p.description}</small>`;
     l.querySelector("input").addEventListener("change", updateButton);
@@ -316,6 +317,7 @@ function renderScore(res) {
   }
   t.innerHTML = html + "</tbody>";
   $("#score").hidden = false;
+  $("#score-empty").hidden = true;
 }
 
 /* ------------------------------------------------------------------ stages */
@@ -323,7 +325,8 @@ function renderStages(res) {
   const tabs = $("#stage-tabs");
   tabs.innerHTML = "";
   const withStages = res.results.filter((r) => r.stages && r.stages.length);
-  if (!withStages.length) { $("#stages").hidden = true; return; }
+  if (!withStages.length) { $("#stages").hidden = true; $("#stages-empty").hidden = false; return; }
+  $("#stages-empty").hidden = true;
   if (!withStages.some((r) => r.id === state.stageTab)) state.stageTab = (withStages.find((r) => r.id === "hybrid") || withStages[0]).id;
   for (const r of withStages) {
     const b = document.createElement("button");
@@ -368,13 +371,13 @@ function benchTable(summary, rows, metric, label, dp, higherBetter) {
   if (!present.length) return "";
   const vals = present.map(([k]) => summary[k][metric]);
   const lo = Math.min(...vals), hi = Math.max(...vals);
-  let h = `<table><thead><tr><th scope="col">Pipeline</th><th scope="col">${label}</th></tr></thead><tbody>`;
+  let h = `<div class="table-wrap"><table><thead><tr><th scope="col">Pipeline</th><th scope="col">${label}</th></tr></thead><tbody>`;
   for (const [k, name, c] of present) {
     const v = summary[k][metric];
     const frac = hi === lo ? 1 : (higherBetter ? (v - lo) / (hi - lo) : (hi - v) / (hi - lo));
     h += `<tr><td class="name" style="--c:${COLORS[c]}">${name}</td><td style="--c:${COLORS[c]}">${v.toFixed(dp)}<span class="bar" style="width:${Math.round(20 + 80 * frac)}%"></span></td></tr>`;
   }
-  return h + "</tbody></table>";
+  return h + "</tbody></table></div>";
 }
 
 async function loadBenchmark() {
@@ -384,6 +387,12 @@ async function loadBenchmark() {
     if (!r.ok) throw new Error();
     const b = await r.json();
     const c = b.clean;
+    const ours = c.hybrid_student_int8 || c.hybrid_student, base = c.classical_bilateral;
+    if (ours && base) {
+      $("#fact-psnr").textContent = `+${(ours.psnr - base.psnr).toFixed(1)} dB`;
+      $("#fact-de").textContent = `${(base.delta_e / ours.delta_e).toFixed(1)}× lower`;
+    }
+    $("#bench-lede").innerHTML = `<b>${b.n_crops} full-resolution crops</b> from held-out SIDD scenes: 5 phone cameras, ISO 50 to 10,000. None were used for training or tuning.`;
     let html = `<p class="lede">Averaged over ${b.n_crops} full-resolution crops from SIDD scenes that were never used for training or tuning (5 phone cameras, ISO 50 to 10,000).</p><div class="bench-grid">`;
     html += `<div><h3>Fidelity</h3><p class="lede">Peak signal-to-noise ratio against the ground truth. Higher is better.</p>${benchTable(c, BENCH_ROWS, "psnr", "PSNR (dB)", 2, true)}</div>`;
     html += `<div><h3>Colour accuracy</h3><p class="lede">Mean CIEDE2000 colour difference. Below 2 is barely visible.</p>${benchTable(c, BENCH_ROWS, "delta_e", "ΔE 2000", 2, false)}</div>`;
@@ -392,14 +401,14 @@ async function loadBenchmark() {
       const m = b.efficiency.models;
       const rows = [["classical", "Traditional", "traditional", null], ["learned_fp32.onnx", "Learned FP32", "learned", "learned.pt"],
         ["hybrid_student_fp32.onnx", "Hybrid FP32", "hybrid", "hybrid_student.pt"], ["hybrid_student_int8.onnx", "Hybrid INT8 (deployed)", "hybrid", "hybrid_student.pt"]];
-      let t = `<table><thead><tr><th scope="col">Pipeline</th><th scope="col">Parameters</th><th scope="col">Size (MB)</th><th scope="col">1 MP (ms)</th><th scope="col">Memory (MB)</th></tr></thead><tbody>`;
+      let t = `<div class="table-wrap"><table><thead><tr><th scope="col">Pipeline</th><th scope="col">Parameters</th><th scope="col">Size (MB)</th><th scope="col">1 MP (ms)</th><th scope="col">Memory (MB)</th></tr></thead><tbody>`;
       for (const [k, name, col, pt] of rows) {
         const e = m[k]; if (!e) continue;
         const p = pt && m[pt] ? (m[pt].params / 1e6).toFixed(2) + "M" : "–";
         const lat = e["1024x1024"] || {};
         t += `<tr><td class="name" style="--c:${COLORS[col]}">${name}</td><td>${p}</td><td>${e.file_size_mb ? e.file_size_mb.toFixed(2) : "–"}</td><td>${lat.latency_ms_median ? Math.round(lat.latency_ms_median) : "–"}</td><td>${lat.peak_rss_mb ? Math.round(lat.peak_rss_mb) : "–"}</td></tr>`;
       }
-      html += `<div><h3>Cost</h3><p class="lede">Whole pipeline on a laptop CPU with 4 threads, 1-megapixel RAW.</p>${t}</tbody></table></div>`;
+      html += `<div><h3>Cost</h3><p class="lede">Whole pipeline on a laptop CPU with 4 threads, 1-megapixel RAW.</p>${t}</tbody></table></div></div>`;
     }
     body.innerHTML = html + "</div>";
   } catch {

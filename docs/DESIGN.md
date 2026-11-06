@@ -114,8 +114,8 @@ See [`docs/FAILURE_ANALYSIS.md`](FAILURE_ANALYSIS.md).
   noise profile rescaled to match) to about 1.2 MP. That keeps the end-to-end response at a few seconds
   on a shared 2-thread CPU.
 - Interface:
-  - A light, professional theme. Images sit in a dark neutral viewer frame, so the surround does not
-    bias colour judgement. Deep teal is reserved for our pipeline and the primary action.
+  - A warm near-black theme with content between hairline rails. Images sit on pure black, so the
+    surround is neutral for colour judgement. One mint accent marks our pipeline.
   - A draggable before/after wipe between any two of: RAW mosaic, ground truth, each pipeline's
     output, or any intermediate stage. 2× zoom with pan.
   - A scoreboard with metrics against ground truth, plus each pipeline's adaptive decisions.

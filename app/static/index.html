@@ -7,30 +7,51 @@
 <meta name="description" content="Develop a smartphone RAW file with a traditional, a learned and a hybrid image signal processor and compare the results.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/app.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Crect width='1' height='1' fill='%23d9534f'/%3E%3Crect x='1' width='1' height='1' fill='%235cb85c'/%3E%3Crect y='1' width='1' height='1' fill='%235cb85c'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%234a7fd6'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Crect width='1' height='1' fill='%23e5484d'/%3E%3Crect x='1' width='1' height='1' fill='%234fe3b0'/%3E%3Crect y='1' width='1' height='1' fill='%234fe3b0'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%235b8def'/%3E%3C/svg%3E">
 </head>
 <body>
+<div class="rails">
 <header class="top">
   <a class="brand" href="/" aria-label="Hybrid ISP home">
     <span class="mosaic" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <span class="wordmark">Hybrid ISP</span>
   </a>
-  <p class="tagline">Turn a phone’s raw sensor data into a photo, three ways, and compare.</p>
-  <nav class="links">
+  <nav class="links" aria-label="Sections">
+    <a href="#workbench">Develop</a>
+    <a href="#stages-row">How it works</a>
     <a href="#benchmark">Benchmark</a>
-    <a id="repo-link" href="https://github.com/ruck-syu/hybrid-smartphone-isp" rel="noopener">Source</a>
   </nav>
+  <div class="top-actions">
+    <a class="pill ghost-pill" id="repo-link" href="https://github.com/ruck-syu/hybrid-smartphone-isp" rel="noopener">Source</a>
+    <a class="pill cream" href="#workbench">Try it</a>
+  </div>
 </header>
 
-<main class="layout">
-  <div class="workspace">
+<section class="hero" aria-labelledby="hero-title">
+  <h1 id="hero-title">Raw sensor data in.<br><span class="dim">A clean photo out.</span></h1>
+  <div class="hero-grid">
+    <p class="hero-sub">A smartphone image pipeline that pairs <b>classical colour science</b> with a <b>0.75&nbsp;MB neural network</b> for denoising and demosaicing. Compare it against a traditional and a fully learned pipeline on any RAW file.</p>
+    <dl class="facts" id="facts">
+      <div><dt>PSNR over traditional</dt><dd id="fact-psnr">+5.4 dB</dd></div>
+      <div><dt>Colour error</dt><dd id="fact-de">2.6× lower</dd></div>
+      <div><dt>Deployed model</dt><dd>0.75 MB</dd></div>
+    </dl>
+  </div>
+  <div class="hero-cta">
+    <a class="pill cream big" href="#workbench">Develop a sample</a>
+    <label class="pill ghost-pill big" for="file">Upload a RAW</label>
+  </div>
+</section>
+
+<section class="stage-band" id="workbench" aria-label="Develop a RAW file">
+<main class="workspace">
   <section class="viewer" aria-label="Image viewer">
     <div class="stage" id="stage" data-state="empty">
       <div class="empty" id="empty">
         <p class="empty-title">Nothing developed yet</p>
-        <p>Pick a sample on the right, or drop a RAW file anywhere on this page, then press Develop.</p>
+        <p>Pick a sample, or drop a RAW file anywhere on this page, then press Develop.</p>
       </div>
       <div class="frame" id="frame" hidden>
         <img id="img-a" alt="" draggable="false">
@@ -70,9 +91,7 @@
           <label><input type="radio" name="view" value="full"><span>Whole frame</span></label>
         </div>
         <p class="view-hint" id="view-hint">Large photos: a full-resolution crop from the centre, so you see real pixel-level quality.</p>
-        <div class="samples-head">
-          <span>Test scenes with ground truth</span>
-        </div>
+        <div class="samples-head"><span>Test scenes with ground truth</span></div>
         <div class="samples" id="samples-gt" role="radiogroup" aria-label="Test scenes"></div>
         <div class="samples-head"><span>Phones the model never saw</span></div>
         <div class="samples" id="samples-dng" role="radiogroup" aria-label="Unseen phones"></div>
@@ -105,32 +124,52 @@
       <p class="status" id="status" role="status" aria-live="polite">Pick an input to start.</p>
     </form>
   </aside>
-
-  <section class="score" id="score" hidden aria-label="Results">
-    <h2>How each pipeline did</h2>
-    <p class="score-note" id="score-note"></p>
-    <div class="table-wrap"><table id="score-table"></table></div>
-  </section>
-  </div>
-
-  <section class="stages" id="stages" hidden aria-label="Processing stages">
-    <div class="stages-head">
-      <h2>Inside the pipeline</h2>
-      <div class="tabs" id="stage-tabs" role="tablist"></div>
-    </div>
-    <p class="stages-note">Every stage the image went through, in order. Select one to compare it in the viewer.</p>
-    <ol class="film" id="film"></ol>
-  </section>
-
-  <section class="bench" id="benchmark" aria-label="Benchmark">
-    <h2>Benchmark on held-out scenes</h2>
-    <div id="bench-body"><p class="muted">Loading results…</p></div>
-  </section>
 </main>
+</section>
+
+<section class="row" id="score-row" aria-labelledby="score-title">
+  <div class="row-head">
+    <h2 id="score-title">Compare honestly<br><span class="dim">against the ground truth.</span></h2>
+    <p class="row-copy"><b>Every test scene has a reference photo</b> averaged from a burst of about 150 frames, so each pipeline gets a real score. Uploads have no reference, so <b>compare them by eye</b> in the viewer.</p>
+    <a class="pill accent" href="#workbench">Scores</a>
+  </div>
+  <div class="row-body">
+    <div class="score" id="score" hidden>
+      <p class="score-note" id="score-note"></p>
+      <div class="table-wrap"><table id="score-table"></table></div>
+    </div>
+    <p class="placeholder" id="score-empty">Develop an image to see how each pipeline scores.</p>
+  </div>
+</section>
+
+<section class="row" id="stages-row" aria-labelledby="stages-title">
+  <div class="row-head">
+    <h2 id="stages-title">See every stage<br><span class="dim">of the pipeline.</span></h2>
+    <p class="row-copy"><b>Classical stages</b> handle white balance, the colour matrix and gamma exactly. <b>The network</b> only removes noise and fills in the missing colours. Select a stage to compare it in the viewer.</p>
+    <a class="pill accent" href="#workbench">Stages</a>
+  </div>
+  <div class="row-body">
+    <div class="stages" id="stages" hidden>
+      <div class="tabs" id="stage-tabs" role="tablist"></div>
+      <ol class="film" id="film"></ol>
+    </div>
+    <p class="placeholder" id="stages-empty">Develop an image to see its stages.</p>
+  </div>
+</section>
+
+<section class="row" id="benchmark" aria-labelledby="bench-title">
+  <div class="row-head">
+    <h2 id="bench-title">Measured on scenes<br><span class="dim">it never saw.</span></h2>
+    <p class="row-copy" id="bench-lede"><b>108 full-resolution crops</b> from held-out SIDD scenes: 5 phone cameras, ISO 50 to 10,000. None were used for training or tuning.</p>
+    <a class="pill accent" href="https://github.com/ruck-syu/hybrid-smartphone-isp/blob/main/eval/RESULTS.md" rel="noopener">Results</a>
+  </div>
+  <div class="row-body" id="bench-body"><p class="placeholder">Loading results…</p></div>
+</section>
 
 <footer class="foot">
   <p>Test scenes from SIDD (Abdelhamed, Lin &amp; Brown, CVPR 2018), never used in training. Phone DNGs from raw.pixls.us (CC0). Files you upload are processed in memory and never stored.</p>
 </footer>
+</div>
 <script src="/static/app.js" defer></script>
 </body>
 </html>
