@@ -159,7 +159,8 @@ async function develop({ quiet = false } = {}) {
     if (!r.ok) throw new Error(body.detail || `The server returned an error (${r.status}).`);
     state.result = body;
     showResult(body);
-    status(`Developed in ${((performance.now() - t0) / 1000).toFixed(1)} s.`, "done");
+    const secs = (performance.now() - t0) / 1000;
+    status(secs < 0.3 ? "Developed. This sample was already processed, so it loaded instantly." : `Developed in ${secs.toFixed(1)} s.`, "done");
   } catch (err) {
     status(err.message === "Failed to fetch" ? "Lost the connection to the server. Try again." : err.message, "error");
     if (!state.result) { $("#empty").hidden = false; }
