@@ -29,6 +29,7 @@ ABL = [
     ("hybrid_student__wb_sog", "metadata WB → shades-of-grey AWB"),
     ("hybrid_student__generic_ccm", "metadata CCM → generic CCM"),
     ("hybrid_student__sharpen", "+ classical unsharp mask after network"),
+    ("hybrid_student__no_detail", "− noise-adaptive detail restoration"),
     ("hybrid_student__nometa", "no metadata at all (AWB + generic CCM + estimated NLF)"),
     ("classical_nodenoise", "Traditional ISP without denoising"),
     ("classical_bilateral_fixed", "Traditional ISP, fixed (non-adaptive) denoise parameters"),

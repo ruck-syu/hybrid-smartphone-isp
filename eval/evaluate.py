@@ -116,6 +116,7 @@ def build_methods(models: Path, device: str, which: set[str] | None = None):
         add("hybrid_student__wb_sog", lambda r: h.run(r, wb="shades_of_gray")[0])
         add("hybrid_student__generic_ccm", lambda r: h.run(r, ccm="generic")[0])
         add("hybrid_student__sharpen", lambda r: h.run(r, sharpen=0.3)[0])
+        add("hybrid_student__no_detail", lambda r: h.run(r, detail=0.0)[0])
         add("hybrid_student__nometa", lambda r: h.run(r, wb="shades_of_gray", ccm="generic", nlf="estimated")[0])
     return M
 

@@ -32,10 +32,10 @@ def _samples():
 
 
 @functools.lru_cache(maxsize=24)
-def _develop_sample(sample: str, pids: tuple, cond: tuple, stages: bool) -> str:
+def _develop_sample(sample: str, pids: tuple, cond: tuple, stages: bool, view: str) -> str:
     """Bundled samples are deterministic, so their results are cached (instant repeat views)."""
     raw, gt, label = core.load_input(None, sample)
-    out = core.develop(raw, gt, list(pids), dict(cond), stages)
+    out = core.develop(raw, gt, list(pids), dict(cond), stages, view)
     out["source"] = label
     return json.dumps(out)
 
@@ -63,7 +63,9 @@ def bench():
 async def develop_endpoint(file: UploadFile | None = File(None), sample: str | None = Form(None),
                            pipelines: str = Form("traditional,hybrid"), noise: float = Form(1.0),
                            exposure: float = Form(0.0), wb_error: float = Form(0.0),
-                           drop_metadata: bool = Form(False), stages: bool = Form(True)):
+                           drop_metadata: bool = Form(False), stages: bool = Form(True),
+                           view: str = Form("detail")):
+    view = "full" if view == "full" else "detail"
     pids = [p for p in pipelines.split(",") if p]
     if not pids:
         raise HTTPException(400, "Pick at least one pipeline to develop with.")
@@ -89,12 +91,12 @@ async def develop_endpoint(file: UploadFile | None = File(None), sample: str | N
             loop = asyncio.get_running_loop()
             if path is None and sample:
                 body = await loop.run_in_executor(
-                    None, _develop_sample, sample, tuple(pids), tuple(sorted(cond.items())), stages)
+                    None, _develop_sample, sample, tuple(pids), tuple(sorted(cond.items())), stages, view)
                 return Response(body, media_type="application/json")
 
             def work():
                 raw, gt, label = core.load_input(path, sample)
-                out = core.develop(raw, gt, pids, cond, stages)
+                out = core.develop(raw, gt, pids, cond, stages, view)
                 out["source"] = file.filename if path else label
                 return out
             return JSONResponse(await loop.run_in_executor(None, work))

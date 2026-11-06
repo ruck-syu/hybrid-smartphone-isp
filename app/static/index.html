@@ -65,6 +65,11 @@
           <span class="drop-main" id="drop-main">Drop a RAW file or choose one</span>
           <span class="drop-sub">DNG, CR2, NEF, ARW, ORF or RW2, up to 80 MB</span>
         </label>
+        <div class="view-toggle" role="radiogroup" aria-label="What to develop">
+          <label><input type="radio" name="view" value="detail" checked><span>1:1 detail</span></label>
+          <label><input type="radio" name="view" value="full"><span>Whole frame</span></label>
+        </div>
+        <p class="view-hint" id="view-hint">Large photos: a full-resolution crop from the centre, so you see real pixel-level quality.</p>
         <div class="samples-head">
           <span>Test scenes with ground truth</span>
         </div>

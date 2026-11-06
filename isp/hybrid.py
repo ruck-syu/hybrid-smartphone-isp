@@ -15,6 +15,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+import cv2
 import numpy as np
 
 from . import classical as C
@@ -62,6 +63,58 @@ def estimate_nlf(packed: np.ndarray, block: int = 8) -> tuple[float, float]:
     a = float(np.clip(a, 1e-7, 4e-3))  # plausibility clamp (SIDD ISO 10000 is ~3e-3)
     b = float(max(b, 1e-9))
     return a, b
+
+
+LUMA = np.array([0.2126, 0.7152, 0.0722], np.float32)
+# Detail restoration strength is noise-adaptive: full strength on clean images (median display-domain
+# noise std <= NU_CLEAN), fading linearly to zero at NU_NOISY. All SIDD val/test images have
+# nu >= 0.012, where the network's own output is best (scripts/tune_detail.py shows any global
+# strength there trades PSNR for re-injected noise); clean phone DNGs sit at nu ~ 0.0015-0.003.
+DETAIL_ALPHA = 1.0
+DETAIL_CORING = 2.0
+DETAIL_SIGMA = 1.0
+NU_CLEAN, NU_NOISY = 0.005, 0.015
+
+
+def restore_detail(out: np.ndarray, lin_wb: np.ndarray, rggb_wb: np.ndarray, M: np.ndarray,
+                   profile: tuple[float, float], gains: np.ndarray, alpha: float = DETAIL_ALPHA,
+                   coring: float = DETAIL_CORING, sigma: float = DETAIL_SIGMA) -> tuple[np.ndarray, np.ndarray]:
+    """Noise-adaptive detail restoration (classical stage after the network).
+
+    The network is trained towards SIDD's very soft burst-averaged ground truth and tends to remove
+    real texture together with noise. Here the fine-detail band of a cheap classical render (Malvar
+    demosaic -> CCM -> gamma) is soft-thresholded ("cored") at `coring` x the per-pixel display-domain
+    noise std predicted by the noise model, and blended into the network's own detail band:
+
+        Y_out = Y_net - HP(Y_net) + (1 - alpha) * HP(Y_net) + alpha * core(HP(Y_classical), coring * sigma_disp)
+
+    On clean images almost all real detail survives the coring; on noisy images the classical band is
+    mostly noise and is suppressed, so the network's denoised result is kept. The blend strength is also
+    scaled by the image's overall noise level (see NU_CLEAN / NU_NOISY). Returns (image, sigma map,
+    effective alpha).
+    """
+    a, b = profile
+    g = float(np.mean(gains))
+    rgb_c = C.demosaic_malvar(np.minimum(rggb_wb, 1.0))
+    disp_c = C.srgb_oetf(np.clip(C.apply_ccm(rgb_c, M), 0, 1))
+    # per-pixel noise std of the luma in display space: NLF (WB'd domain) -> CCM -> sRGB slope
+    x_wb = np.clip(lin_wb.mean(-1), 1e-6, None)
+    sig_wb = g * np.sqrt(np.maximum(a * x_wb / g + b, 1e-12))
+    kappa = float(np.linalg.norm(LUMA @ np.asarray(M, np.float32)))
+    y_lin = np.clip(np.clip(C.apply_ccm(lin_wb, M), 0, None) @ LUMA, 1e-4, 1)
+    slope = np.where(y_lin <= 0.0031308, 12.92, (1.055 / 2.4) * np.power(y_lin, 1 / 2.4 - 1))
+    sig_disp = sig_wb * kappa * slope
+    nu = float(np.median(sig_disp))
+    alpha = alpha * float(np.clip((NU_NOISY - nu) / (NU_NOISY - NU_CLEAN), 0.0, 1.0))
+    if alpha <= 0:
+        return out, sig_disp, 0.0
+    y_net, y_c = out @ LUMA, disp_c @ LUMA
+    hp_net = y_net - cv2.GaussianBlur(y_net, (0, 0), sigma)
+    hp_c = y_c - cv2.GaussianBlur(y_c, (0, 0), sigma)
+    t = coring * sig_disp
+    hp_c = np.sign(hp_c) * np.maximum(np.abs(hp_c) - t, 0)
+    dy = alpha * (hp_c - hp_net)
+    return np.clip(out + dy[..., None], 0, 1).astype(np.float32), sig_disp, alpha
 
 
 class Backend:
@@ -137,7 +190,8 @@ class HybridISP:
 
     def run(self, raw: RawImage, wb: str = "auto", ccm: str = "auto", nlf: str = "auto",
             exposure_norm: bool = True, noise_scale: float = 1.0, tone: str = "none",
-            sharpen: float = 0.0, keep_intermediates: bool = False) -> tuple[np.ndarray, dict]:
+            sharpen: float = 0.0, detail: float | None = None, coring: float = DETAIL_CORING,
+            keep_intermediates: bool = False) -> tuple[np.ndarray, dict]:
         t_all = time.perf_counter()
         timings, inter = {}, {}
         t = time.perf_counter()
@@ -198,15 +252,23 @@ class HybridISP:
                 M, ccm_src = raw.cam2srgb, "metadata"
             else:
                 M, ccm_src = C.GENERIC_CAM2SRGB, "generic"
-            lin = np.clip(C.apply_ccm(np.clip(lin, 0, None), M), 0, None)
+            lin_wb = np.clip(lin, 0, None)
+            lin = np.clip(C.apply_ccm(lin_wb, M), 0, None)
             tick("ccm")
             if tone == "auto":
                 g = C.auto_exposure_gain(lin)
                 lin = C.tone_reinhard(lin * g, white=4.0) if g > 1.5 else lin
             out = C.srgb_oetf(np.clip(lin, 0, 1))
             tick("gamma_tone", out)
+            alpha = DETAIL_ALPHA if detail is None else detail
+            if alpha > 0:
+                g4 = np.array([gains[0], gains[1], gains[1], gains[2]], np.float32)
+                rggb_wb = C.unpack_rggb(packed * g4)
+                out, _, alpha = restore_detail(out, lin_wb, rggb_wb, M, profile, gains, alpha, coring)
+                if alpha > 0:
+                    tick("detail_restore", out)
         else:
-            k, ccm_src = 1.0, None
+            k, ccm_src, alpha = 1.0, None, 0.0
             wb_src = nlf_src = None  # the end-to-end network ignores all metadata
             if keep_intermediates:
                 inter["packed_input"] = C.unpack_rggb(packed)
@@ -220,5 +282,6 @@ class HybridISP:
         info = {"timings_ms": timings, "total_ms": (time.perf_counter() - t_all) * 1000,
                 "wb_gains": [float(v) for v in gains], "wb_source": wb_src, "ccm_source": ccm_src,
                 "noise_profile": [float(profile[0]), float(profile[1])], "noise_source": nlf_src,
-                "exposure_gain_k": float(k), "intermediates": inter}
+                "exposure_gain_k": float(k), "detail_alpha": float(alpha) if self.net.mode == "hybrid" else 0.0,
+                "intermediates": inter}
         return out.astype(np.float32), info

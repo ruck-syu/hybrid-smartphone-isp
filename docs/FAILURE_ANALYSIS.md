@@ -132,3 +132,28 @@ Fixed after review, with regression tests in `tests/test_isp.py`:
 - A missing AsShotNeutral falls back to grey-world WB.
 - Tiles are spaced evenly.
 - The robustness lab's noise model no longer reports synthetic metadata as real metadata.
+
+## 9. Our system: over-smoothing on clean, sharp photos (fixed with a noise-adaptive stage)
+
+On the unseen phone DNGs (well-lit, low noise), the hybrid looked softer than the traditional ISP.
+Fine-detail energy (Laplacian variance of luma) was 5–6× lower.
+
+**Causes.**
+- SIDD's ground truth is burst-averaged and very soft. On an ISO 100 test crop its detail energy is
+  1.09, against 3.76 for the traditional ISP (mostly residual noise) and 0.61 for the network. The L1
+  loss rewards hedging, so when the network is unsure it blurs.
+- The app used to bin large RAWs 4× to about 1 MP. That packs more real detail per pixel than any
+  training image had, and the network treated it as noise: 3× softer than traditional at native
+  resolution, 6× softer after binning.
+- On clean images the traditional ISP's noise-adaptive filters barely act, so it keeps everything.
+
+**Fixes.**
+1. Noise-adaptive detail restoration (stage 8 in DESIGN.md §4). Validation can't tune clean-image
+   behaviour, because every SIDD validation image has noise index ν ≥ 0.02, while clean phone DNGs sit at
+   0.0015–0.003. A global blend strength tuned on validation either did nothing or re-injected
+   noise at ISO 3200 (−1.7 dB). So the strength is a function of ν: full when ν ≤ 0.005, fading to 0 at
+   ν ≥ 0.015. Validation PSNR is unchanged (41.954 → 41.954). Detail energy on the unseen phones
+   recovered from 17% to 66–85% of the traditional ISP's.
+2. The app now develops a native-resolution 1:1 centre crop by default. "Whole frame" (binned) is
+   an option.
+3. Not done yet: retraining with scale augmentation and an edge/gradient loss, the proper long-term fix.

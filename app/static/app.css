@@ -212,6 +212,19 @@ legend {
 .drop.chosen { border-style: solid; border-color: var(--ours); background: var(--ours-soft); }
 .drop-main { font-weight: 600; overflow-wrap: anywhere; }
 .drop-sub { color: var(--muted); font-size: var(--f-xs); }
+.view-toggle {
+  display: grid; grid-template-columns: 1fr 1fr; margin-top: 0.75rem;
+  border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden;
+}
+.view-toggle label { position: relative; cursor: pointer; }
+.view-toggle input { position: absolute; opacity: 0; }
+.view-toggle span {
+  display: block; text-align: center; padding: 0.45rem 0.5rem; font-size: var(--f-s); font-weight: 500; color: var(--muted);
+}
+.view-toggle label + label span { border-left: 1px solid var(--line-strong); }
+.view-toggle input:checked + span { background: var(--ours-soft); color: var(--ours); font-weight: 650; }
+.view-toggle input:focus-visible + span { outline: 2px solid var(--ours); outline-offset: -2px; }
+.view-hint { margin: 0.4rem 0 0; color: var(--muted); font-size: var(--f-xs); }
 .samples-head { color: var(--muted); font-size: var(--f-s); margin: 0.9rem 0 0.4rem; }
 .samples { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
 .sample {

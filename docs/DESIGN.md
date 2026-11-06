@@ -52,7 +52,8 @@ Mermaid source: `docs/architecture/hybrid-isp.mmd`. Code: `isp/hybrid.py::Hybrid
 | 4 | Exposure normalisation `k` | classical, adaptive | Scales the signal so its mean is about 0.2 (k ≤ 32). The network sees a standard brightness and a relative noise level, and its output is divided by k. This makes the pipeline illumination-equivariant. |
 | 5 | Noise-conditioned U-Net | **learned** | Joint denoise + demosaic is where classical methods are weakest (signal-dependent noise, zipper and false colour, clipped-noise bias). Input: 4 WB raw planes + 4 noise-σ planes. Output: residual over bilinear demosaic, at full resolution via PixelShuffle. |
 | 6 | Colour correction | classical | Camera-specific and exactly given by DNG `ColorMatrix1/2`, interpolated by correlated colour temperature as in the DNG SDK. Learning it across 5 cameras would waste capacity and hurt colour accuracy (see the learned baseline). |
-| 7 | sRGB OETF, optional tone map and sharpening | classical | Standardised, exact |
+| 7 | sRGB OETF, optional tone map | classical | Standardised, exact |
+| 8 | Noise-adaptive detail restoration | classical, adaptive | The network learned SIDD's very soft burst-averaged ground truth and over-smooths clean photos. The fine-detail band of a classical render is cored at 2σ of the per-pixel noise predicted by the noise model and blended back. The strength fades from 1 on clean images to 0 on noisy ones, so SIDD scores are unchanged while unseen phone photos keep their texture. |
 
 **Training the hybrid end-to-end.** Stages 6–7 are written in PyTorch (`TorchColorBack`) and run in
 fp32, while the network runs under fp16 autocast. The L1 loss is computed on the **final sRGB** against

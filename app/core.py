@@ -187,18 +187,34 @@ def stage_image(v: np.ndarray, cfa: str) -> np.ndarray:
 
 STAGE_LABELS = {"raw_denoise": "Bayer-domain denoise", "white_balance": "White balance", "demosaic": "Demosaic",
                 "noise_map": "Noise level map", "exposure_normalised": "Exposure normalised",
-                "packed_input": "Packed RAW input",
+                "packed_input": "Packed RAW input", "detail_restore": "Detail restoration",
                 "ccm": "Colour matrix", "tone_map": "Tone map", "gamma": "Gamma", "denoise": "Edge-preserving denoise",
                 "sharpen": "Sharpen", "network_linear_cam": "Network output (linear camera RGB)",
                 "gamma_tone": "Colour matrix + gamma", "network": "Network output"}
 
 
+def centre_crop(raw: RawImage, gt: np.ndarray | None, max_mp: float):
+    """Native-resolution centre crop of about `max_mp` megapixels (even offsets keep the CFA phase)."""
+    H, W = raw.bayer.shape
+    s = min(1.0, (max_mp * 1e6 / (H * W)) ** 0.5)
+    h, w = int(H * s) // 2 * 2, int(W * s) // 2 * 2
+    y, x = (H - h) // 4 * 2, (W - w) // 4 * 2
+    out = RawImage(bayer=raw.bayer[y:y + h, x:x + w], cfa=raw.cfa, wb_gains=raw.wb_gains, cam2srgb=raw.cam2srgb,
+                   iso=raw.iso, noise_profile=raw.noise_profile, orientation=raw.orientation,
+                   make=raw.make, model=raw.model)
+    return out, None if gt is None else gt[y:y + h, x:x + w]
+
+
 def develop(raw: RawImage, gt: np.ndarray | None, pipelines: list[str], conditions: dict,
-            stages: bool = True) -> dict:
+            stages: bool = True, view: str = "detail") -> dict:
     t0 = time.perf_counter()
     mp = raw.bayer.size / 1e6
+    cropped = False
+    if view == "detail" and mp > MAX_MP:
+        raw, gt = centre_crop(raw, gt, MAX_MP)
+        cropped = True
     f = 1
-    while mp / (f * f) > MAX_MP:
+    while raw.bayer.size / 1e6 / (f * f) > MAX_MP:
         f += 1
     if min(raw.bayer.shape) // f < 32:
         raise ValueError("This image is too small to develop (minimum 32×32 pixels after resizing).")
@@ -208,6 +224,7 @@ def develop(raw: RawImage, gt: np.ndarray | None, pipelines: list[str], conditio
     raw = degrade(raw, **conditions)
     orient = lambda im: C.apply_orientation(im, raw.orientation)
     res = {"input": {"width": int(raw.bayer.shape[1]), "height": int(raw.bayer.shape[0]), "binned": f,
+                     "cropped": cropped, "view": view,
                      "megapixels_original": round(mp, 1), "iso": raw.iso, "cfa": raw.cfa,
                      "metadata": bool(raw.has_metadata), "noise_profile": raw.noise_profile is not None},
            "raw": encode(orient(raw_preview(raw)), 85), "gt": None if gt is None else encode(orient(gt), 90),
@@ -229,7 +246,7 @@ def develop(raw: RawImage, gt: np.ndarray | None, pipelines: list[str], conditio
         wall = (time.perf_counter() - t) * 1000
         r = {"id": pid, "name": name, "model": model, "ms": round(wall), "image": encode(orient(out), 90),
              "timings": {STAGE_LABELS.get(k, k): round(v, 1) for k, v in info.get("timings_ms", {}).items()},
-             "decisions": {k: info[k] for k in ("wb_source", "noise_source", "ccm_source", "exposure_gain_k",
+             "decisions": {k: info[k] for k in ("wb_source", "noise_source", "ccm_source", "exposure_gain_k", "detail_alpha",
                                                  "wb_gains", "noise_profile") if info.get(k) is not None}}
         if kind == "classical":
             r["decisions"]["wb_source"] = "metadata" if raw.wb_gains is not None else "grayworld"

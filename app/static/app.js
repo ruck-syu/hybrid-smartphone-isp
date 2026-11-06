@@ -119,6 +119,11 @@ function bindForm() {
     sync();
   }
   $("#nometa").addEventListener("change", condState);
+  document.querySelectorAll('input[name="view"]').forEach((r) => r.addEventListener("change", () => {
+    $("#view-hint").textContent = r.value === "full"
+      ? "Large photos are scaled down to about 1 megapixel so the whole frame fits. Fine detail is averaged away."
+      : "Large photos: a full-resolution crop from the centre, so you see real pixel-level quality.";
+  }));
   $("#form").addEventListener("submit", (e) => { e.preventDefault(); develop(); });
 }
 
@@ -142,6 +147,7 @@ async function develop({ quiet = false } = {}) {
   fd.append("wb_error", $("#wb").value);
   fd.append("drop_metadata", $("#nometa").checked);
   fd.append("stages", "true");
+  fd.append("view", document.querySelector('input[name="view"]:checked').value);
 
   const btn = $("#develop");
   btn.disabled = true;
@@ -185,7 +191,8 @@ function showResult(res) {
   $("#viewer-bar").hidden = false;
   const inp = res.input;
   let line = `${res.source}${inp.iso ? `, ISO ${Math.round(inp.iso)}` : ""}. Developed at ${inp.width} × ${inp.height}`;
-  if (inp.binned > 1) line += `, reduced from ${inp.megapixels_original} MP to keep it fast`;
+  if (inp.cropped) line += `, a full-resolution crop from the centre of the ${inp.megapixels_original} MP frame`;
+  if (inp.binned > 1) line += `, scaled down from ${inp.megapixels_original} MP to fit the whole frame`;
   line += inp.metadata ? ", using the camera’s colour and noise metadata."
                        : ". No camera metadata, so white balance, colour and noise are estimated from the image.";
   $("#source").textContent = line;
@@ -299,6 +306,7 @@ function renderScore(res) {
     if (d.wb_source) why.push(`white balance from ${wbName[d.wb_source] || d.wb_source}`);
     if (d.noise_source) why.push(`noise level ${d.noise_source === "metadata" ? "from metadata" : "estimated from the image"}`);
     if (d.exposure_gain_k && d.exposure_gain_k > 1.01) why.push(`brightened ×${d.exposure_gain_k.toFixed(1)} for the network`);
+    if (d.detail_alpha != null && r.id.startsWith("hybrid")) why.push(d.detail_alpha > 0.01 ? `clean image, fine detail restored (${Math.round(d.detail_alpha * 100)}%)` : "noisy image, detail restoration off");
     html += `<tr class="${r.id === "hybrid" ? "ours" : ""}"><td class="name" style="--c:${COLORS[r.id] || "var(--muted)"}">${r.name}${r.id === "hybrid" ? " (ours)" : ""}${why.length ? `<small>${why.join(", ")}</small>` : ""}</td>`;
     for (const [k, , , dp] of cols) {
       const v = val(r, k);
