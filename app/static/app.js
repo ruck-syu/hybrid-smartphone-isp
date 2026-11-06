@@ -20,7 +20,8 @@ async function boot() {
   bindForm();
   bindViewer();
   loadBenchmark();
-  const first = state.meta.samples.find((s) => s.has_gt && s.iso >= 1600) || state.meta.samples[0];
+  const first = state.meta.samples.find((s) => s.id === "S6_ISO3200_0062")
+    || state.meta.samples.find((s) => s.has_gt && s.iso >= 1600) || state.meta.samples[0];
   if (first) { selectSample(first.id); develop({ quiet: true }); }
 }
 
