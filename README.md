@@ -2,7 +2,7 @@
 
 **Problem P2: Intelligent and Computationally Efficient Smartphone ISP** (CV Hackathon 2026)
 
-- **Live demo:** https://hybrid-isp-production.up.railway.app
+- **Live demo:** https://hybrid-isp.up.railway.app
 - **Results:** [`eval/RESULTS.md`](eval/RESULTS.md) · submission summary [`eval_P2_TXX.md`](eval_P2_TXX.md)
 - **Design document:** [`docs/DESIGN.md`](docs/DESIGN.md) · **Failure analysis:** [`docs/FAILURE_ANALYSIS.md`](docs/FAILURE_ANALYSIS.md)
 
