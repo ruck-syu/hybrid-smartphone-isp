@@ -6,5 +6,21 @@
   "lpips_x2": 0.10395304982860883,
   "dng_sharpness_net_only": 2.3763883908589682,
   "dng_sharpness_trad": 6.153665502866109
+ },
+ "runs/isp-ft-detail-g05/hybrid_student/best.pt": {
+  "psnr_native": 43.26919300748402,
+  "lpips_native": 0.10211907865272628,
+  "psnr_x2": 42.279794919279965,
+  "lpips_x2": 0.08187564783212212,
+  "dng_sharpness_net_only": 3.33902116616567,
+  "dng_sharpness_trad": 6.153665502866109
+ },
+ "runs/isp-ft-detail-g10/hybrid_student/best.pt": {
+  "psnr_native": 43.283789779521946,
+  "lpips_native": 0.10318047553300858,
+  "psnr_x2": 42.31724075777359,
+  "lpips_x2": 0.08101820045461257,
+  "dng_sharpness_net_only": 3.3283613125483194,
+  "dng_sharpness_trad": 6.153665502866109
  }
 }
