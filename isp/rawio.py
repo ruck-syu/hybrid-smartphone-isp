@@ -124,7 +124,8 @@ def load_sidd_metadata(path: str | Path) -> dict:
             return default
 
     out = {"make": str(g("Make", "")), "model": str(g("Model", "")),
-           "iso": float(g("ISOSpeedRatings", 0) or 0), "exposure": float(g("ExposureTime", 0) or 0),
+           "iso": float(np.ravel(g("ISOSpeedRatings", 0) or 0)[0]),
+           "exposure": float(np.ravel(g("ExposureTime", 0) or 0)[0]),
            "orientation": int(g("Orientation", 1) or 1),
            "as_shot_neutral": np.asarray(g("AsShotNeutral"), np.float64).ravel(),
            "cm1": g("ColorMatrix1"), "cm2": g("ColorMatrix2"),
@@ -136,8 +137,8 @@ def load_sidd_metadata(path: str | Path) -> dict:
         val = np.asarray(t[2]).ravel()
         if tag == 33422:
             out["cfa"] = _cfa_from_codes(val)
-        elif tag == 51041 and val.size >= 2:
-            out["noise_profile"] = (float(val[0]), float(val[1]))
+        elif tag == 51041 and val.size >= 2:  # same policy as DNG files: mean of per-plane (S, O)
+            out["noise_profile"] = (float(val[0::2].mean()), float(val[1::2].mean()))
     if out["cm1"] is None:
         out["cm1"] = out["cm2"]
     if out["cm2"] is None:
@@ -154,7 +155,11 @@ def load_sidd_raw(raw_path: str | Path, meta_path: str | Path | None = None) -> 
         m = load_sidd_metadata(meta_path)
         img.cfa = m["cfa"]
         neutral = m["as_shot_neutral"]
-        img.wb_gains = (neutral[1] / neutral).astype(np.float32)
+        if neutral.size == 3 and np.all(np.isfinite(neutral)) and np.all(neutral > 0):
+            img.wb_gains = (neutral[1] / neutral).astype(np.float32)
+        else:  # missing AsShotNeutral -> grey-world estimate from the mosaic
+            from .classical import estimate_wb_grayworld
+            img.wb_gains = estimate_wb_grayworld(img.bayer, m["cfa"])
         cm = interpolate_color_matrix(m["cm1"], m["cm2"], m["ill1"], m["ill2"], img.wb_gains)
         img.cam2srgb = cam2srgb_from_xyz2cam(cm)
         img.iso, img.exposure = m["iso"], m["exposure"]
@@ -205,16 +210,18 @@ def load_dng(path: str | Path) -> RawImage:
     """Load any RAW format supported by LibRaw (DNG, CR2, NEF, ARW...)."""
     import rawpy
     with rawpy.imread(str(path)) as r:
+        if r.raw_pattern is None or r.num_colors != 3 or np.asarray(r.raw_pattern).shape != (2, 2):
+            raise ValueError("Only 2x2 Bayer sensors are supported (X-Trans, Foveon, monochrome and "
+                             "linear/demosaiced DNGs are not).")
         raw = r.raw_image_visible.astype(np.float32)
-        pattern = r.raw_pattern
+        # colour index map of the *visible* area (accounts for odd top/left sensor margins)
+        colors = np.asarray(r.raw_colors_visible)
         desc = r.color_desc.decode()
-        cfa = "".join(desc[pattern[i // 2, i % 2]] for i in range(4)).replace("G", "G")
-        if r.num_colors != 3 or pattern.shape != (2, 2):
-            raise ValueError("Only 2x2 Bayer sensors are supported (X-Trans / Foveon are not).")
+        cfa = "".join(desc[colors[i // 2, i % 2]] for i in range(4))
+        if sorted(cfa) != ["B", "G", "G", "R"]:
+            raise ValueError(f"Unsupported CFA layout {cfa!r}.")
         blacks = np.array(r.black_level_per_channel, np.float32)
-        black = np.zeros_like(raw)
-        for i in range(4):
-            black[i // 2::2, i % 2::2] = blacks[pattern[i // 2, i % 2]] if len(blacks) > 3 else blacks.mean()
+        black = blacks[colors] if len(blacks) >= 4 else np.full_like(raw, float(blacks.mean()))
         white = float(r.white_level)
         bayer = np.clip((raw - black) / max(white - black.max(), 1.0), 0, 1)
         wb = np.array(r.camera_whitebalance[:3], np.float64)

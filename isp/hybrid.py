@@ -111,8 +111,12 @@ def run_tiled(fn, inp: np.ndarray, tile: int = 512, overlap: int = 32, mult: int
     out = np.zeros((2 * H, 2 * W, 3), np.float32)
     wsum = np.zeros((2 * H, 2 * W, 1), np.float32)
     step = tile - 2 * overlap
-    ys = list(range(0, max(H - tile, 0) + 1, step)) + ([H - tile] if H > tile and (H - tile) % step else [])
-    xs = list(range(0, max(W - tile, 0) + 1, step)) + ([W - tile] if W > tile and (W - tile) % step else [])
+    def starts(n):  # evenly spaced tile origins covering [0, n) with overlap >= 2*overlap
+        if n <= tile:
+            return [0]
+        k = int(np.ceil((n - tile) / step)) + 1
+        return sorted({int(round(v)) // 2 * 2 for v in np.linspace(0, n - tile, k)})
+    ys, xs = starts(H), starts(W)
     th, tw = min(tile, H), min(tile, W)
     ramp_y = np.minimum(np.arange(2 * th) + 1, np.arange(2 * th)[::-1] + 1).astype(np.float32)
     ramp_x = np.minimum(np.arange(2 * tw) + 1, np.arange(2 * tw)[::-1] + 1).astype(np.float32)
@@ -147,8 +151,13 @@ class HybridISP:
                 inter[name] = img
 
         rggb, shift = C.to_rggb(raw.bayer, raw.cfa)
-        H2, W2 = (rggb.shape[0] // 2) * 2, (rggb.shape[1] // 2) * 2
-        rggb = rggb[:H2, :W2]
+        if min(rggb.shape) < 8:
+            raise ValueError("Image too small (need at least 8x8 Bayer pixels).")
+        # odd sizes: reflect-pad one row/col; numpy 'reflect' copies index n-2, which has the same
+        # CFA parity as the new index n, so the mosaic stays valid (no edge rows are dropped)
+        ph, pw = rggb.shape[0] % 2, rggb.shape[1] % 2
+        if ph or pw:
+            rggb = np.pad(rggb, ((0, ph), (0, pw)), mode="reflect")
         packed = C.pack_rggb(rggb)
         tick("pack")
 
@@ -196,10 +205,8 @@ class HybridISP:
         if sharpen > 0:
             out = C.sharpen_unsharp(out, amount=sharpen, sigma=1.0, threshold=0.01)
             tick("sharpen", out)
-        out = C.from_rggb(np.clip(out, 0, 1), shift)
-        if out.shape[:2] != raw.bayer.shape:  # odd sizes: pad back
-            out = np.pad(out, ((0, raw.bayer.shape[0] - out.shape[0]), (0, raw.bayer.shape[1] - out.shape[1]), (0, 0)),
-                         mode="edge")
+        out = np.clip(out, 0, 1)[: out.shape[0] - ph, : out.shape[1] - pw]
+        out = C.from_rggb(out, shift)
         info = {"timings_ms": timings, "total_ms": (time.perf_counter() - t_all) * 1000,
                 "wb_gains": [float(v) for v in gains], "wb_source": wb_src, "ccm_source": ccm_src,
                 "noise_profile": [float(profile[0]), float(profile[1])], "noise_source": nlf_src,

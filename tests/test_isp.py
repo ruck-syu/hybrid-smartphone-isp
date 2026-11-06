@@ -64,3 +64,43 @@ def test_classical_pipeline_runs_without_metadata():
     out, info = C.ClassicalISP(C.ClassicalConfig(wb="shades_of_gray")).run(raw)
     assert out.shape == (64, 64, 3) and np.isfinite(out).all()
     assert 0 <= out.min() and out.max() <= 1
+
+
+@pytest.mark.parametrize("shape", [(9, 9), (9, 8), (17, 23)])
+def test_hybrid_odd_sizes_reconstruct_edges(shape, tmp_path):
+    """Odd mosaics are padded (not truncated): output has the input shape and a real last row/col."""
+    from isp.hybrid import HybridISP
+
+    class Fake:
+        mode = "hybrid"
+        path = "fake"
+
+        def __call__(self, x):  # bilinear-ish: repeat WB'd R/G/B planes
+            r, g, b = x[:, 0:1], 0.5 * (x[:, 1:2] + x[:, 2:3]), x[:, 3:4]
+            up = lambda z: np.repeat(np.repeat(z, 2, 2), 2, 3)
+            return np.concatenate([up(r), up(g), up(b)], 1)
+
+    isp = HybridISP.__new__(HybridISP)
+    isp.net, isp.tile = Fake(), 512
+    rng = np.random.default_rng(0)
+    raw = RawImage(bayer=rng.random(shape).astype(np.float32) * 0.5, cfa="GRBG",
+                   wb_gains=np.ones(3, np.float32), cam2srgb=np.eye(3, dtype=np.float32), noise_profile=(1e-4, 1e-6))
+    out, _ = isp.run(raw)
+    assert out.shape == shape + (3,)
+    assert np.isfinite(out).all()
+
+
+def test_tile_starts_are_evenly_spaced():
+    calls = []
+
+    def fn(x):
+        calls.append(x.shape)
+        return np.zeros((1, 3, x.shape[2] * 2, x.shape[3] * 2), np.float32)
+    run_tiled(fn, np.zeros((1024, 1024, 8), np.float32), tile=512, overlap=32)
+    assert len(calls) == 9  # 3x3 evenly spaced tiles, not a near-duplicate last tile
+
+
+def test_tiny_classical_input_does_not_crash():
+    raw = RawImage(bayer=np.full((4, 4), 0.2, np.float32), cfa="RGGB")
+    out, _ = C.ClassicalISP(C.ClassicalConfig(wb="grayworld")).run(raw)
+    assert out.shape == (4, 4, 3)

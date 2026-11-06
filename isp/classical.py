@@ -243,6 +243,8 @@ def estimate_noise_sigma(bayer: np.ndarray, cfa: str = "RGGB") -> float:
     h, w = (g.shape[0] // 2) * 2, (g.shape[1] // 2) * 2
     g = g[:h, :w]
     hh = (g[0::2, 0::2] - g[0::2, 1::2] - g[1::2, 0::2] + g[1::2, 1::2]) / 2
+    if hh.size == 0:
+        return 0.0
     return float(np.median(np.abs(hh)) / 0.6745)
 
 

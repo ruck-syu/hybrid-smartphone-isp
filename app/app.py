@@ -99,17 +99,20 @@ def degrade(raw: RawImage, noise_mult: float, wb_err: float, exposure_stops: flo
     rng = np.random.default_rng(seed)
     b = raw.bayer.copy()
     prof = raw.noise_profile
+    sim = prof if prof is not None else (1e-4, 1e-6)  # used only to synthesise noise
     if exposure_stops < 0:  # simulate under-exposure followed by digital gain (noise amplification)
         s = 2 ** exposure_stops
-        a0, b0 = prof if prof else (1e-4, 1e-6)
+        a0, b0 = sim
         dark = b * s
         dark = dark + rng.standard_normal(b.shape).astype(np.float32) * np.sqrt(np.maximum(a0 * dark + b0, 0))
         b = np.clip(dark / s, 0, 1)
-        prof = (a0 / s, b0 / s ** 2)  # approx after gain (shot ∝ 1/s, read ∝ 1/s²) + original noise
+        sim = (a0 * (1 + 1 / s), b0 * (1 + 1 / s ** 2))  # original noise + amplified new noise
+        prof = sim if prof is not None else None
     if noise_mult > 1:
-        a0, b0 = prof if prof else (1e-4, 1e-6)
+        a0, b0 = sim
         b = np.clip(b + rng.standard_normal(b.shape).astype(np.float32) * np.sqrt(np.maximum((noise_mult - 1) * (a0 * b + b0), 0)), 0, 1)
-        prof = (a0 * noise_mult, b0 * noise_mult)
+        sim = (a0 * noise_mult, b0 * noise_mult)
+        prof = sim if prof is not None else None
     out = RawImage(bayer=b, cfa=raw.cfa, wb_gains=None if raw.wb_gains is None else raw.wb_gains * np.array([1 + wb_err, 1, 1 - wb_err], np.float32),
                    cam2srgb=raw.cam2srgb, iso=raw.iso, noise_profile=prof, orientation=raw.orientation)
     if drop_meta:
@@ -155,6 +158,8 @@ def process(upload, sample, pipelines, noise_mult, wb_err, exposure_stops, drop_
             raise gr.Error("Upload a RAW file or choose a sample first.")
         if not pipelines:
             raise gr.Error("Select at least one pipeline.")
+        if min(raw.bayer.shape) < 16:
+            raise gr.Error("Image is too small to process (minimum 16×16 pixels).")
         mp = raw.bayer.size / 1e6
         f = 1
         while mp / (f * f) > MAX_MP:
@@ -176,7 +181,8 @@ def process(upload, sample, pipelines, noise_mult, wb_err, exposure_stops, drop_
             gallery.append((to_u8(out), name))
             row = [name, f"{info['wall_ms']:.0f}"]
             if gt is not None:
-                m = all_metrics(out, gt[: out.shape[0], : out.shape[1]], use_lpips=False)
+                g_ = C.apply_orientation(gt, raw.orientation)
+                m = all_metrics(out, g_[: out.shape[0], : out.shape[1]], use_lpips=False)
                 row += [f"{m['psnr']:.2f}", f"{m['ssim']:.4f}", f"{m['delta_e']:.2f}"]
             else:
                 row += ["–", "–", "–"]

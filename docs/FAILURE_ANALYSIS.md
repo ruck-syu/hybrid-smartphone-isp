@@ -100,3 +100,35 @@ at −0.36 dB val / −0.68 dB test.
   on a 4-vCPU Kaggle T4 for the same model. The first teacher was undertrained (29k iterations) and
   scored lower than the student trained on Kaggle. We retrained it with an equal budget before
   distillation.
+
+## 7. Domain shift on a real, unseen phone sensor
+
+We shot RAW+JPEG on a Pixel 4a 5G front camera (not in SIDD; DNG with NoiseProfile) of an indoor
+ceiling with a tube light, and ran all three pipelines on it.
+
+- The **learned ISP** shows a strong **magenta cast**. With no metadata it has to guess the
+  colour transform and applies a SIDD-camera average. This is case 2 again, on a sensor it never saw.
+- The **hybrid** stays neutral, because colour comes from this sensor's own DNG ColorMatrix. It renders
+  the scene darker and lower in contrast than the traditional ISP. Our reading: on SIDD the
+  network learned to *remove* the clipped-noise black lift (case 1). This sensor's RAW is cleaner, so
+  the same correction over-darkens. That is a training-distribution effect, so multi-sensor training
+  data (or conditioning on the black-level clipping statistics) would address it.
+- The images stay local because they show a private room, so there is no figure here.
+
+## 8. Known issues from code review (documented, not yet fixed)
+
+- `naive_demosaic` in `isp/models.py` upsamples the packed planes with `align_corners=False`. This puts
+  R/B samples half a pixel off their true sites, and the residual network has to learn to undo the
+  shift. Fixing it means retraining every hybrid model, so we left it as is and noted it here.
+- `load_dng` treats LibRaw's `rgb_xyz_matrix` as XYZ→camera for non-DNG RAW (CR2/NEF/ARW). DNG
+  files always use their own ColorMatrix tags, so DNG results are not affected. We have not validated
+  this path on a non-DNG file.
+
+Fixed after review, with regression tests in `tests/test_isp.py`:
+- CFA phase now comes from `raw_colors_visible`, so odd sensor margins are handled.
+- Odd-sized mosaics are reflect-padded instead of having their last row/column dropped.
+- Tiny inputs no longer crash.
+- Non-Bayer and monochrome RAW is rejected cleanly.
+- A missing AsShotNeutral falls back to grey-world WB.
+- Tiles are spaced evenly.
+- The robustness lab's noise model no longer reports synthetic metadata as real metadata.
