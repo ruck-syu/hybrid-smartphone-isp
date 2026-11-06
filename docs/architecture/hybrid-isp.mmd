@@ -1,0 +1,25 @@
+graph LR
+    IN["RAW Bayer + metadata<br/>(DNG / SIDD .MAT)<br/>AsShotNeutral, ColorMatrix1/2,<br/>NoiseProfile, ISO"]
+    S1["1. CFA canonicalise<br/>RGGB pack H/2 x W/2 x 4"]
+    S2["2. Noise model (adaptive)<br/>DNG NoiseProfile or<br/>estimated NLF var = a*x + b"]
+    S3["3. White balance (adaptive)<br/>AsShotNeutral or<br/>AWB shades-of-grey"]
+    S4["4. Exposure normalisation<br/>gain k (illumination adaptive)"]
+    S5["5. Noise-conditioned U-Net<br/>student 0.64M params, INT8 ONNX<br/>joint denoise + demosaic<br/>in: 4ch WB raw + 4ch sigma map<br/>out: linear camera RGB (PixelShuffle x2)"]
+    S6["6. CCM<br/>CCT-interpolated DNG ColorMatrix<br/>to linear sRGB"]
+    S7["7. sRGB OETF gamma<br/>+ optional tone map / sharpen"]
+    OUT["sRGB image"]
+    TR["Training: L1 on sRGB through<br/>differentiable CCM + gamma (fp32)<br/>+ KD loss from 2.6M teacher<br/>SIDD: 136 train scenes x 2 captures"]
+    B1["Traditional ISP baseline:<br/>WB, Malvar demosaic, CCM, gamma,<br/>bilateral + guided denoise (YCbCr), unsharp mask"]
+    B2["Learned ISP baseline:<br/>packed RAW to U-Net to sRGB<br/>(no metadata)"]
+
+    IN --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> OUT
+    TR -. "trains" .-> S5
+    IN -. "compare" .-> B1
+    IN -. "compare" .-> B2
+
+    classDef classical fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef learned fill:#ffedd5,stroke:#c2410c,color:#0f172a
+    classDef io fill:#f1f5f9,stroke:#475569,color:#0f172a
+    class S1,S2,S3,S4,S6,S7,B1 classical
+    class S5,TR,B2 learned
+    class IN,OUT io

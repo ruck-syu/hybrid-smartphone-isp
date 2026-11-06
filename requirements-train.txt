@@ -1,0 +1,7 @@
+-r requirements.txt
+torch>=2.2
+torchvision
+lpips
+onnx>=1.16
+onnxconverter-common
+matplotlib

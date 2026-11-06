@@ -1,0 +1,18 @@
+.venv/
+data/
+__pycache__/
+*.pyc
+runs/
+*.zip
+.DS_Store
+*.MAT
+*.mat
+.env
+kaggle.json
+access_token
+build/
+runs/
+kaggle/kernels/
+kaggle/code_ds/*.tgz
+*.pt.tmp
+Computer Vision Hackathon 2026.pdf

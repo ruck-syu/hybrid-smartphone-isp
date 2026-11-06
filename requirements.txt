@@ -1,0 +1,10 @@
+numpy==2.5.4
+scipy==1.18.1
+h5py==3.16.0
+opencv-python-headless==5.0.0.93
+scikit-image==0.26.0
+rawpy==0.28.0
+onnxruntime==1.31.1
+gradio==6.31.0
+psutil==7.2.2
+tifffile==2026.10.15

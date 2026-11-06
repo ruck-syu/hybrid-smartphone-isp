@@ -1,0 +1,196 @@
+{
+ "grid": [
+  {
+   "denoise": "bilateral",
+   "strength": 0.5,
+   "sharpen": 0.0,
+   "psnr": 27.78316950944107,
+   "ssim": 0.7694831353922685
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 0.5,
+   "sharpen": 0.3,
+   "psnr": 27.690281747918675,
+   "ssim": 0.7616099715232849
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 0.5,
+   "sharpen": 0.6,
+   "psnr": 27.59208668250453,
+   "ssim": 0.7536185383796692
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 1.0,
+   "sharpen": 0.0,
+   "psnr": 28.54391106049536,
+   "ssim": 0.8821435024340948
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 1.0,
+   "sharpen": 0.3,
+   "psnr": 28.53487132742116,
+   "ssim": 0.8819317494829496
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 1.0,
+   "sharpen": 0.6,
+   "psnr": 28.524821377407562,
+   "ssim": 0.8817034214735031
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 1.5,
+   "sharpen": 0.0,
+   "psnr": 28.622284852353875,
+   "ssim": 0.9034991040825844
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 1.5,
+   "sharpen": 0.3,
+   "psnr": 28.6168466411758,
+   "ssim": 0.9034208580851555
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 1.5,
+   "sharpen": 0.6,
+   "psnr": 28.61088210888552,
+   "ssim": 0.9033360133568445
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 2.0,
+   "sharpen": 0.0,
+   "psnr": 28.62710472134005,
+   "ssim": 0.9069504464666048
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 2.0,
+   "sharpen": 0.3,
+   "psnr": 28.622925648341937,
+   "ssim": 0.9068950489163399
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 2.0,
+   "sharpen": 0.6,
+   "psnr": 28.618391760126418,
+   "ssim": 0.90683580438296
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 3.0,
+   "sharpen": 0.0,
+   "psnr": 28.616477374072428,
+   "ssim": 0.906617097556591
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 3.0,
+   "sharpen": 0.3,
+   "psnr": 28.61396713374748,
+   "ssim": 0.9065892125169436
+  },
+  {
+   "denoise": "bilateral",
+   "strength": 3.0,
+   "sharpen": 0.6,
+   "psnr": 28.611277897740724,
+   "ssim": 0.9065598224600157
+  },
+  {
+   "denoise": "nlm",
+   "strength": 0.6,
+   "sharpen": 0.0,
+   "psnr": 26.262504295005385,
+   "ssim": 0.7422545223186413
+  },
+  {
+   "denoise": "nlm",
+   "strength": 0.6,
+   "sharpen": 0.2,
+   "psnr": 26.201156915264278,
+   "ssim": 0.7395583788553873
+  },
+  {
+   "denoise": "nlm",
+   "strength": 1.0,
+   "sharpen": 0.0,
+   "psnr": 27.00413996431928,
+   "ssim": 0.8136411520342032
+  },
+  {
+   "denoise": "nlm",
+   "strength": 1.0,
+   "sharpen": 0.2,
+   "psnr": 26.979569651114307,
+   "ssim": 0.8127711911996206
+  },
+  {
+   "denoise": "nlm",
+   "strength": 1.5,
+   "sharpen": 0.0,
+   "psnr": 27.225617693567955,
+   "ssim": 0.8390952311456203
+  },
+  {
+   "denoise": "nlm",
+   "strength": 1.5,
+   "sharpen": 0.2,
+   "psnr": 27.217282124630984,
+   "ssim": 0.8388208399216334
+  },
+  {
+   "denoise": "nlm",
+   "strength": 2.0,
+   "sharpen": 0.0,
+   "psnr": 27.324252422683287,
+   "ssim": 0.8507687710225582
+  },
+  {
+   "denoise": "nlm",
+   "strength": 2.0,
+   "sharpen": 0.2,
+   "psnr": 27.321801855863043,
+   "ssim": 0.8507106726368269
+  },
+  {
+   "denoise": "nlm",
+   "strength": 3.0,
+   "sharpen": 0.0,
+   "psnr": 27.363901378211466,
+   "ssim": 0.8572944067418575
+  },
+  {
+   "denoise": "nlm",
+   "strength": 3.0,
+   "sharpen": 0.2,
+   "psnr": 27.36322682516689,
+   "ssim": 0.8572874690095583
+  }
+ ],
+ "best": {
+  "bilateral": {
+   "denoise": "bilateral",
+   "strength": 2.0,
+   "sharpen": 0.0,
+   "psnr": 28.62710472134005,
+   "ssim": 0.9069504464666048
+  },
+  "nlm": {
+   "denoise": "nlm",
+   "strength": 3.0,
+   "sharpen": 0.0,
+   "psnr": 27.363901378211466,
+   "ssim": 0.8572944067418575
+  }
+ },
+ "n_images": 24
+}
