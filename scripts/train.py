@@ -45,6 +45,8 @@ def main():
     ap.add_argument("--val_every", type=int, default=1000)
     ap.add_argument("--time_budget_min", type=float, default=1e9)
     ap.add_argument("--init", default=None)
+    ap.add_argument("--scale_prob", type=float, default=0.0, help="probability of a 2x-binned training patch")
+    ap.add_argument("--grad_w", type=float, default=0.0, help="weight of the L1 image-gradient (edge) loss")
     a = ap.parse_args()
 
     dev = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
@@ -58,9 +60,10 @@ def main():
     teacher = load_checkpoint(a.teacher).to(dev).eval() if a.teacher else None
     back = TorchColorBack().to(dev)
 
-    ds = SIDDPatches(a.data, "train", a.patch, mode, length=a.iters * a.bs)
+    ds = SIDDPatches(a.data, "train", a.patch, mode, length=a.iters * a.bs, scale_prob=a.scale_prob)
     vds = SIDDPatches(a.data, "val", a.patch, mode, augment=False)
     val = fixed_val_crops(vds, per_image=6)
+    val_x2 = fixed_val_crops(vds, per_image=6, scaled=True)  # sharp-per-pixel validation (detail retention)
     print(f"train recs={len(ds.recs)} val crops={len(val)}", flush=True)
     kw = dict(persistent_workers=True, prefetch_factor=4) if a.workers > 0 else {}
     dl = DataLoader(ds, batch_size=a.bs, num_workers=a.workers, pin_memory=dev == "cuda", **kw)
@@ -70,7 +73,7 @@ def main():
         prog = min(1.0, max(i / a.iters, elapsed_min / a.time_budget_min))
         return a.lr * min(1.0, (i + 1) / 500) * (0.02 + 0.98 * 0.5 * (1 + math.cos(math.pi * prog)))
     scaler = torch.amp.GradScaler(enabled=dev == "cuda")
-    best, log = -1.0, []
+    best, best_comb, log = -1.0, -1.0, []
     t0 = time.time()
     it = 0
     model.train()
@@ -80,6 +83,10 @@ def main():
             pred = render(model, batch, back)
         pred = pred.float()
         loss = F.l1_loss(pred, batch["gt"])
+        if a.grad_w > 0:  # edge loss: match horizontal/vertical image gradients
+            gx = lambda z: z[..., :, 1:] - z[..., :, :-1]
+            gy = lambda z: z[..., 1:, :] - z[..., :-1, :]
+            loss = loss + a.grad_w * (F.l1_loss(gx(pred), gx(batch["gt"])) + F.l1_loss(gy(pred), gy(batch["gt"])))
         if teacher is not None and a.kd > 0:
             with torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.float16, enabled=dev == "cuda"):
                 tp = render(teacher, batch, back).float()
@@ -98,21 +105,29 @@ def main():
         stop = it >= a.iters or (time.time() - t0) / 60 > a.time_budget_min
         if it % a.val_every == 0 or stop:
             model.eval()
-            ps = []
-            with torch.no_grad():
-                for v in val:
-                    vb = {k: x.unsqueeze(0).to(dev) for k, x in v.items()}
-                    p = render(model, vb, back).clamp(0, 1)
-                    ps.append((10 * torch.log10(1 / F.mse_loss(p, vb["gt"]))).item())
-            psnr = sum(ps) / len(ps)
-            log.append({"it": it, "val_psnr": psnr, "loss": loss.item(), "time_s": time.time() - t0})
-            print(f"== it {it} val PSNR {psnr:.3f}", flush=True)
+
+            def score(items):
+                ps = []
+                with torch.no_grad():
+                    for v in items:
+                        vb = {k: x.unsqueeze(0).to(dev) for k, x in v.items()}
+                        p = render(model, vb, back).clamp(0, 1)
+                        ps.append((10 * torch.log10(1 / F.mse_loss(p, vb["gt"]))).item())
+                return sum(ps) / len(ps)
+            psnr, psnr_x2 = score(val), score(val_x2)
+            log.append({"it": it, "val_psnr": psnr, "val_psnr_x2": psnr_x2, "loss": loss.item(),
+                        "time_s": time.time() - t0})
+            print(f"== it {it} val PSNR {psnr:.3f}  2x-binned {psnr_x2:.3f}", flush=True)
             ck = {"config": model.config(), "state_dict": model.state_dict(), "it": it, "val_psnr": psnr,
                   "name": a.model}
             torch.save(ck, out / "last.pt")
             if psnr > best:
                 best = psnr
                 torch.save(ck, out / "best.pt")
+            comb = 0.5 * (psnr + psnr_x2)  # native + sharp-per-pixel validation
+            if comb > best_comb:
+                best_comb = comb
+                torch.save(dict(ck, val_psnr_x2=psnr_x2), out / "best_combined.pt")
             json.dump(log, open(out / "log.json", "w"), indent=1)
             model.train()
         if stop:

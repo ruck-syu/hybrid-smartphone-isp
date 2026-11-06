@@ -1,0 +1,10 @@
+{
+ "models/hybrid_student.pt": {
+  "psnr_native": 43.68993632713836,
+  "lpips_native": 0.10545502810014619,
+  "psnr_x2": 41.18214214298059,
+  "lpips_x2": 0.10395304982860883,
+  "dng_sharpness_net_only": 2.3763883908589682,
+  "dng_sharpness_trad": 6.153665502866109
+ }
+}

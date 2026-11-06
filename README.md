@@ -70,6 +70,8 @@ samples/        held-out SIDD test crops (RAW + metadata + GT) used by the demo
 docker build -t hybrid-isp . && docker run -p 7860:7860 hybrid-isp
 # or
 pip install -r requirements.txt && python app/server.py   # http://localhost:7860
+# develop a folder of RAW files from the command line (full resolution)
+python scripts/develop.py --input samples/dng --output results --pipelines traditional,learned,hybrid
 ```
 
 ## Reproducing the results
