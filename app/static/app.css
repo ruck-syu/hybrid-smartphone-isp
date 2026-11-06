@@ -81,19 +81,26 @@ h2 {
 /* ---------------------------------------------------------------- layout */
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 22rem;
-  grid-template-areas: "viewer controls" "score controls" "stages stages" "bench bench";
-  gap: var(--gap) calc(var(--gap) * 1.5);
+  gap: calc(var(--gap) * 1.5);
   padding: var(--gap) clamp(1rem, 3vw, 2rem) 3rem;
   max-width: 1500px;
   margin: 0 auto;
+}
+/* Viewer, scoreboard and controls share one grid, kept separate from the full-width sections
+   below so the control column can never run into them. */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "viewer controls" "score controls";
+  gap: var(--gap) calc(var(--gap) * 1.5);
   align-items: start;
 }
 .viewer { grid-area: viewer; min-width: 0; }
-.controls { grid-area: controls; position: sticky; top: 1rem; }
+.controls { grid-area: controls; min-width: 0; }
 .score { grid-area: score; min-width: 0; }
-.stages { grid-area: stages; min-width: 0; }
-.bench { grid-area: bench; min-width: 0; border-top: 1px solid var(--line); padding-top: 2rem; margin-top: 1rem; }
+.stages { min-width: 0; }
+.bench { min-width: 0; border-top: 1px solid var(--line); padding-top: 2rem; }
 
 /* ---------------------------------------------------------------- viewer */
 .stage {
@@ -242,10 +249,6 @@ input[type="range"] { width: 100%; accent-color: var(--ours); min-height: 28px; 
   border: 0; border-radius: var(--r-small); padding: 0.8rem 1rem; cursor: pointer; min-height: 52px;
 }
 .develop:hover:not(:disabled) { filter: brightness(1.06); }
-@media (min-width: 961px) {
-  .develop { position: sticky; bottom: 1rem; z-index: 5; box-shadow: 0 0 0 0.75rem var(--surround); }
-  .controls { max-height: calc(100vh - 2rem); overflow-y: auto; padding-right: 0.25rem; scrollbar-width: thin; }
-}
 .develop:disabled { background: var(--raised); color: var(--muted); cursor: not-allowed; }
 .status { margin: -0.5rem 0 0; font-size: var(--f-s); color: var(--muted); min-height: 1.5em; }
 .status.error { color: var(--error); }
@@ -299,7 +302,7 @@ tr.ours td { background: rgba(242, 193, 78, 0.06); }
   .top { grid-template-columns: auto auto; }
   .tagline { grid-column: 1 / -1; grid-row: 2; }
   .links { justify-self: end; }
-  .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "controls" "viewer" "score" "stages" "bench"; }
+  .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "controls" "viewer" "score"; }
   .controls { position: static; }
   .stage { width: min(100%, calc(70vh * var(--ar, 1.3333))); }
   .samples {

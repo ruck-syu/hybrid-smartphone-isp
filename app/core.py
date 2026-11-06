@@ -27,15 +27,13 @@ cv2.setNumThreads(THREADS or 0)
 # id -> (display name, kind, model files in order of preference, short description)
 PIPELINES = {
     "traditional": ("Traditional", "classical", None,
-                    "Hand-tuned ISP: Bayer denoise, Malvar demosaic, white balance, colour matrix, "
-                    "edge-preserving denoise, gamma."),
+                    "Hand-tuned stages, no learning."),
     "learned": ("Learned", "net", "learned_int8.onnx|learned_fp32.onnx|learned.pt",
-                "One U-Net maps RAW straight to sRGB and must learn white balance and colour itself."),
+                "One network from RAW to photo, no camera metadata."),
     "hybrid": ("Hybrid", "net", "hybrid_student_int8.onnx|hybrid_student.pt",
-               "Ours: classical white balance, colour matrix and gamma around a 0.64M-parameter INT8 "
-               "network that denoises and demosaics."),
+               "Classical colour stages around a 0.75 MB network."),
     "hybrid_teacher": ("Hybrid teacher", "net", "hybrid_teacher_fp32.onnx|hybrid_teacher.pt",
-                       "The 2.5M-parameter FP32 network the deployed model was distilled from."),
+                       "The 4× larger network it was distilled from."),
 }
 _nets: dict[str, HybridISP] = {}
 
