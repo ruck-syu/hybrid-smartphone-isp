@@ -182,6 +182,13 @@ class HybridISP:
 
         if self.net.mode == "hybrid":
             inp, k = make_hybrid_input(packed, gains, profile, k=None if exposure_norm else 1.0)
+            if keep_intermediates:
+                g4 = np.array([gains[0], gains[1], gains[1], gains[2]], np.float32)
+                inter["white_balance"] = C.unpack_rggb(np.minimum(packed * g4, 1.0))
+                sig = inp[..., 4:].mean(-1)
+                sig = np.clip(sig / max(float(np.percentile(sig, 99.5)), 1e-6), 0, 1)
+                inter["noise_map"] = np.repeat(sig[..., None], 3, -1)
+                inter["exposure_normalised"] = C.unpack_rggb(np.clip(inp[..., :4], 0, 1))
             tick("normalise")
             lin = run_tiled(self.net, inp, self.tile) / k
             tick("network")
@@ -199,7 +206,10 @@ class HybridISP:
             out = C.srgb_oetf(np.clip(lin, 0, 1))
             tick("gamma_tone", out)
         else:
-            k, ccm_src = 1.0, "learned"
+            k, ccm_src = 1.0, None
+            wb_src = nlf_src = None  # the end-to-end network ignores all metadata
+            if keep_intermediates:
+                inter["packed_input"] = C.unpack_rggb(packed)
             out = np.clip(run_tiled(self.net, packed.astype(np.float32), self.tile), 0, 1)
             tick("network", out)
         if sharpen > 0:

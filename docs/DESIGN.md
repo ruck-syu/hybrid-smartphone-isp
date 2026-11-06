@@ -107,13 +107,25 @@ See [`docs/FAILURE_ANALYSIS.md`](FAILURE_ANALYSIS.md).
 
 ## 9. Deployment
 
-- Gradio app (`app/app.py`), ONNX Runtime CPU, no PyTorch needed at serve time. Hosted on Hugging Face
-  Spaces. Large RAWs are Bayer-binned (same-colour 2×2 averaging; the noise profile is rescaled
-  accordingly) to ≤ 4 MP so responses stay within about 10 s on shared CPUs.
-- Accepts DNG/CR2/NEF/ARW/ORF/RW2 via LibRaw (`rawpy`), and SIDD samples bundled as `.npz` with GT.
-- Shows every intermediate stage, per-stage timings, adaptive decisions (metadata vs estimated
-  WB/NLF, gain k), and metrics vs GT when available. A robustness lab injects noise, under-exposure,
-  WB error or drops metadata.
+- Web app: a FastAPI JSON API (`app/server.py`, logic in `app/core.py`) and a hand-built HTML/CSS/JS
+  front end (`app/static/`). It runs on ONNX Runtime on CPU, with no PyTorch at serve time, and is
+  hosted on Railway from the `Dockerfile`. Large RAWs are Bayer-binned (same-colour averaging, with the
+  noise profile rescaled to match) to about 1.2 MP. That keeps the end-to-end response at a few seconds
+  on a shared 2-thread CPU.
+- Interface:
+  - A neutral-grey surround, so the UI does not bias colour judgement. Yellow is reserved for our
+    pipeline and the primary action.
+  - A draggable before/after wipe between any two of: RAW mosaic, ground truth, each pipeline's
+    output, or any intermediate stage. 2× zoom with pan.
+  - A scoreboard with metrics against ground truth, plus each pipeline's adaptive decisions.
+  - A filmstrip of every processing stage with per-stage timings.
+  - A "make it harder" panel that injects noise, under-exposure or white-balance error, or drops
+    metadata.
+  - Benchmark tables loaded from `eval/results`.
+  - Works on phones; follows reduced-motion settings; full keyboard support (the wipe is an ARIA slider).
+- Input: DNG/CR2/NEF/ARW/ORF/RW2 via LibRaw (`rawpy`) plus DNG tag parsing (`tifffile`). Bundled
+  SIDD test crops (with ground truth) and CC0 phone DNGs from raw.pixls.us. Processed JPEGs are
+  rejected with an explanation. Results for bundled samples are cached.
 - `Dockerfile` for a one-command local run.
 
 ## 10. Limitations

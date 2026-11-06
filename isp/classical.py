@@ -53,6 +53,19 @@ def unpack_rggb(planes: np.ndarray) -> np.ndarray:
     return out
 
 
+def cfa_colorize(bayer: np.ndarray, cfa: str = "RGGB", normalise: bool = True) -> np.ndarray:
+    """Show a mosaic as the sensor sees it: every photosite drawn in its filter colour."""
+    idx = {"R": 0, "G": 1, "B": 2}
+    h, w = bayer.shape
+    m = np.zeros((h, w, 3), np.float32)
+    for i, ch in enumerate(cfa):
+        m[i // 2::2, i % 2::2, idx[ch]] = bayer[i // 2::2, i % 2::2]
+    if normalise:
+        m = m / max(float(np.percentile(bayer, 99.5)), 1e-3)
+    m[..., 1] *= 0.6  # twice as many green sites; keep the mosaic visually balanced
+    return gamma_simple(np.clip(m, 0, 1))
+
+
 def cfa_masks(h: int, w: int) -> np.ndarray:
     m = np.zeros((h, w, 3), np.float32)
     m[0::2, 0::2, 0] = 1

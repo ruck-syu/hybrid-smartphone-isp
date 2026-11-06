@@ -43,7 +43,7 @@ isp/            core library (numpy/OpenCV classical ISP, torch models, ONNX inf
   metrics.py      PSNR, SSIM, CIEDE2000, LPIPS
 scripts/        prep_sidd.py, train.py, export_optimize.py (ONNX/FP16/INT8), tune_classical.py, ...
 eval/           evaluate.py (comparison, ablation, robustness), benchmark.py (size/latency/memory), make_report.py
-app/app.py      Gradio application
+app/            web app: server.py (FastAPI JSON API), core.py (pipeline logic), static/ (HTML/CSS/JS front end)
 kaggle/         Kaggle-kernel launcher used for GPU training
 docs/           design document, architecture diagram (mermaid + PNG/SVG), failure analysis
 tests/          unit tests (python -m pytest -q tests)
@@ -57,7 +57,7 @@ samples/        held-out SIDD test crops (RAW + metadata + GT) used by the demo
 # run the app (ONNX runtime only, no torch needed)
 docker build -t hybrid-isp . && docker run -p 7860:7860 hybrid-isp
 # or
-pip install -r requirements.txt && python app/app.py      # http://localhost:7860
+pip install -r requirements.txt && python app/server.py   # http://localhost:7860
 ```
 
 ## Reproducing the results

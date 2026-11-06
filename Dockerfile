@@ -8,6 +8,6 @@ COPY isp ./isp
 COPY app ./app
 COPY models ./models
 COPY samples ./samples
-COPY eval/RESULTS.md ./eval/RESULTS.md
+COPY eval ./eval
 EXPOSE 7860
-CMD ["python", "app/app.py"]
+CMD ["python", "app/server.py"]

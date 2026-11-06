@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hybrid ISP: develop a RAW photo</title>
+<meta name="description" content="Develop a smartphone RAW file with a traditional, a learned and a hybrid image signal processor and compare the results.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Crect width='1' height='1' fill='%23d9534f'/%3E%3Crect x='1' width='1' height='1' fill='%235cb85c'/%3E%3Crect y='1' width='1' height='1' fill='%235cb85c'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%234a7fd6'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/" aria-label="Hybrid ISP home">
+    <span class="mosaic" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <span class="wordmark">Hybrid ISP</span>
+  </a>
+  <p class="tagline">Turn a phone’s raw sensor data into a photo, three ways, and compare.</p>
+  <nav class="links">
+    <a href="#benchmark">Benchmark</a>
+    <a id="repo-link" href="https://github.com/ruck-syu/hybrid-smartphone-isp" rel="noopener">Source</a>
+  </nav>
+</header>
+
+<main class="layout">
+  <section class="viewer" aria-label="Image viewer">
+    <div class="stage" id="stage" data-state="empty">
+      <div class="empty" id="empty">
+        <p class="empty-title">Nothing developed yet</p>
+        <p>Pick a sample on the right, or drop a RAW file anywhere on this page, then press Develop.</p>
+      </div>
+      <div class="frame" id="frame" hidden>
+        <img id="img-a" alt="" draggable="false">
+        <div class="clip" id="clip"><img id="img-b" alt="" draggable="false"></div>
+        <div class="handle" id="handle" role="slider" tabindex="0" aria-label="Comparison divider"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span></span></div>
+        <span class="tag tag-a" id="tag-a"></span>
+        <span class="tag tag-b" id="tag-b"></span>
+      </div>
+      <div class="developing" id="developing" hidden>
+        <div class="sweep" aria-hidden="true"></div>
+        <p><span id="dev-text">Developing</span> <span class="elapsed" id="elapsed">0.0 s</span></p>
+      </div>
+    </div>
+    <div class="viewer-bar" id="viewer-bar" hidden>
+      <label class="pick"><span class="dot" id="dot-a"></span><span class="sr">Left image</span>
+        <select id="sel-a"></select></label>
+      <button class="ghost" id="swap" type="button" title="Swap sides">Swap</button>
+      <label class="pick"><span class="dot" id="dot-b"></span><span class="sr">Right image</span>
+        <select id="sel-b"></select></label>
+      <button class="ghost" id="zoom" type="button" aria-pressed="false">Zoom 2×</button>
+    </div>
+    <p class="source" id="source"></p>
+  </section>
+
+  <aside class="controls" aria-label="Develop settings">
+    <form id="form" novalidate>
+      <fieldset>
+        <legend>Input</legend>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".dng,.cr2,.cr3,.nef,.arw,.orf,.rw2,.raf,.pef,.srw,.npz">
+          <span class="drop-main" id="drop-main">Drop a RAW file or choose one</span>
+          <span class="drop-sub">DNG, CR2, NEF, ARW, ORF or RW2, up to 80 MB</span>
+        </label>
+        <div class="samples-head">
+          <span>Test scenes with ground truth</span>
+        </div>
+        <div class="samples" id="samples-gt" role="radiogroup" aria-label="Test scenes"></div>
+        <div class="samples-head"><span>Phones the model never saw</span></div>
+        <div class="samples" id="samples-dng" role="radiogroup" aria-label="Unseen phones"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pipelines</legend>
+        <div class="pipes" id="pipes"></div>
+      </fieldset>
+
+      <details class="conditions" id="conditions">
+        <summary>Make it harder <span class="cond-state" id="cond-state">off</span></summary>
+        <div class="slider">
+          <label for="noise">Extra sensor noise <output id="noise-out">×1</output></label>
+          <input type="range" id="noise" min="1" max="8" step="0.5" value="1">
+        </div>
+        <div class="slider">
+          <label for="exposure">Under-exposure <output id="exposure-out">0 stops</output></label>
+          <input type="range" id="exposure" min="-4" max="0" step="0.5" value="0">
+        </div>
+        <div class="slider">
+          <label for="wb">White-balance error <output id="wb-out">0%</output></label>
+          <input type="range" id="wb" min="-0.3" max="0.3" step="0.05" value="0">
+        </div>
+        <label class="check"><input type="checkbox" id="nometa"> Ignore camera metadata
+          <span class="hint">White balance, colour matrix and noise level are then estimated from the image.</span></label>
+      </details>
+
+      <button class="develop" id="develop" type="submit" disabled>Develop</button>
+      <p class="status" id="status" role="status" aria-live="polite">Pick an input to start.</p>
+    </form>
+  </aside>
+
+  <section class="score" id="score" hidden aria-label="Results">
+    <h2>How each pipeline did</h2>
+    <p class="score-note" id="score-note"></p>
+    <div class="table-wrap"><table id="score-table"></table></div>
+  </section>
+
+  <section class="stages" id="stages" hidden aria-label="Processing stages">
+    <div class="stages-head">
+      <h2>Inside the pipeline</h2>
+      <div class="tabs" id="stage-tabs" role="tablist"></div>
+    </div>
+    <p class="stages-note">Every stage the image went through, in order. Select one to compare it in the viewer.</p>
+    <ol class="film" id="film"></ol>
+  </section>
+
+  <section class="bench" id="benchmark" aria-label="Benchmark">
+    <h2>Benchmark on held-out scenes</h2>
+    <div id="bench-body"><p class="muted">Loading results…</p></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Test scenes from SIDD (Abdelhamed, Lin &amp; Brown, CVPR 2018), never used in training. Phone DNGs from raw.pixls.us (CC0). Files you upload are processed in memory and never stored.</p>
+</footer>
+<script src="/static/app.js" defer></script>
+</body>
+</html>
