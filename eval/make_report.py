@@ -19,7 +19,8 @@ MAIN = [
 ]
 ABL = [
     ("hybrid_student", "Full hybrid (student, KD)"),
-    ("hybrid_student_nokd", "− knowledge distillation (same student trained on GT only)"),
+    ("hybrid_student_nokd", "student trained on ground truth only (no distillation)"),
+    ("hybrid_student_kd", "student trained with distillation from the 2.5M teacher"),
     ("hybrid_student__nlf_estimated", "NoiseProfile metadata → noise model estimated from the image"),
     ("hybrid_student__noise_map_x0.25", "noise map under-estimated ×0.25"),
     ("hybrid_student__noise_map_x4", "noise map over-estimated ×4"),

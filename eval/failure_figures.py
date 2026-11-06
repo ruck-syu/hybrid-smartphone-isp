@@ -100,7 +100,7 @@ def main():
                                      ("clip to white after WB (fixed)", good[0:350, 300:900])])
 
     # 5) naive INT8 vs sensitivity-guided mixed precision
-    naive = ROOT / "runs" / "q" / "hybrid_student_int8_b.onnx"
+    naive = ROOT / "runs" / "q" / "hybrid_student_int8_naive.onnx"
     fp = M / "hybrid_student_fp32.onnx"
     if naive.exists() and fp.exists():
         s = worst

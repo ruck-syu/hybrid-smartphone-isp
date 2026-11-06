@@ -94,6 +94,7 @@ def build_methods(models: Path, device: str, which: set[str] | None = None):
     for key, fname in [("learned", "learned.pt"), ("learned_student", "learned_student.pt"),
                        ("hybrid_teacher", "hybrid_teacher.pt"),
                        ("hybrid_student", "hybrid_student.pt"), ("hybrid_student_nokd", "hybrid_student_nokd.pt"),
+                       ("hybrid_student_kd", "hybrid_student_kd.pt"),
                        ("hybrid_student_int8", "hybrid_student_int8.onnx"),
                        ("hybrid_student_fp32onnx", "hybrid_student_fp32.onnx"),
                        ("hybrid_student_fp16", "hybrid_student_fp16.onnx"),
