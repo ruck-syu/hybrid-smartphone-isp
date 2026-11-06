@@ -95,8 +95,6 @@ def restore_detail(out: np.ndarray, lin_wb: np.ndarray, rggb_wb: np.ndarray, M: 
     """
     a, b = profile
     g = float(np.mean(gains))
-    rgb_c = C.demosaic_malvar(np.minimum(rggb_wb, 1.0))
-    disp_c = C.srgb_oetf(np.clip(C.apply_ccm(rgb_c, M), 0, 1))
     # per-pixel noise std of the luma in display space: NLF (WB'd domain) -> CCM -> sRGB slope
     x_wb = np.clip(lin_wb.mean(-1), 1e-6, None)
     sig_wb = g * np.sqrt(np.maximum(a * x_wb / g + b, 1e-12))
@@ -106,8 +104,10 @@ def restore_detail(out: np.ndarray, lin_wb: np.ndarray, rggb_wb: np.ndarray, M: 
     sig_disp = sig_wb * kappa * slope
     nu = float(np.median(sig_disp))
     alpha = alpha * float(np.clip((NU_NOISY - nu) / (NU_NOISY - NU_CLEAN), 0.0, 1.0))
-    if alpha <= 0:
+    if alpha <= 0:  # noisy image: skip the classical render entirely
         return out, sig_disp, 0.0
+    rgb_c = C.demosaic_malvar(np.minimum(rggb_wb, 1.0))
+    disp_c = C.srgb_oetf(np.clip(C.apply_ccm(rgb_c, M), 0, 1))
     y_net, y_c = out @ LUMA, disp_c @ LUMA
     hp_net = y_net - cv2.GaussianBlur(y_net, (0, 0), sigma)
     hp_c = y_c - cv2.GaussianBlur(y_c, (0, 0), sigma)

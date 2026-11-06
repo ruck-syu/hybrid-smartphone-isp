@@ -85,6 +85,9 @@ so saturated photosites become neutral white.
 **full-resolution U-Net level** is fragile: head, `enc.0`, `down.0`, `dec.2`, tail each cost 0.1–0.5 dB
 when quantised. The three deeper levels cost ≤ 0.03 dB. The full-resolution features carry the
 image signal and its fine noise structure, where 8-bit activation steps are visible as blotches.
+The deployed (distilled) student shows the same pattern. On the figure's ISO 10000 crop, FP32 scores
+33.53 dB, naive INT8 31.44 dB and mixed INT8 33.24 dB. Its per-layer drops are in
+`eval/results/quant_sensitivity.json`.
 **Fix.** Keep level 0 in float and run the rest in INT8. The model is 0.75 MB (3.4× smaller than FP32)
 at −0.36 dB val / −0.68 dB test.
 
@@ -157,3 +160,25 @@ Fine-detail energy (Laplacian variance of luma) was 5–6× lower.
 2. The app now develops a native-resolution 1:1 centre crop by default. "Whole frame" (binned) is
    an option.
 3. Not done yet: retraining with scale augmentation and an edge/gradient loss, the proper long-term fix.
+
+## 10. Our system: dependence on camera metadata
+
+From the robustness table in `eval/RESULTS.md` §6 (PSNR / ΔE2000, 36 test crops):
+
+| Condition | Learned ISP | Hybrid INT8 (ours) |
+|---|---|---|
+| clean | 32.98 / 4.08 | 37.12 / 2.13 |
+| white-balance metadata off by ±15% | 32.98 / 4.08 | 33.92 / 3.48 |
+| no metadata at all | 32.98 / 4.08 | **31.78 / 5.69** |
+
+**Cause.** The hybrid gets its colour from classical stages fed by the camera's AsShotNeutral and
+ColorMatrix. That makes it exact when metadata is right and fragile when it is wrong. The learned
+ISP ignores metadata, so its quality does not change, but it is consistently mediocre.
+With no metadata the hybrid falls back to shades-of-grey AWB and a generic colour matrix. Those two
+fallbacks cost about 5 dB on their own (ablation table: grey-world 34.47, shades-of-grey 33.29,
+generic CCM 36.50).
+
+**Why it matters less in practice.** Every phone DNG we tested carries AsShotNeutral, ColorMatrix and
+(except the iPhone) a NoiseProfile, so the fallback only runs on stripped files.
+**Next step.** Use a learned AWB (for example a small illuminant-estimation network) as the fallback
+instead of shades-of-grey. The ablation suggests it would close most of the gap.

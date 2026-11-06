@@ -5,14 +5,14 @@
   "classical": {
    "file_size_mb": null,
    "1024x1024": {
-    "latency_ms_median": 101.28641600022092,
-    "latency_ms_min": 100.32608296023682,
-    "peak_rss_mb": 167.77216
+    "latency_ms_median": 107.37358301412314,
+    "latency_ms_min": 107.35916701378301,
+    "peak_rss_mb": 168.968192
    },
    "2048x2048": {
-    "latency_ms_median": 400.10945801623166,
-    "latency_ms_min": 397.0092909876257,
-    "peak_rss_mb": 561.659904
+    "latency_ms_median": 405.171166989021,
+    "latency_ms_min": 402.4477089988068,
+    "peak_rss_mb": 561.446912
    }
   },
   "hybrid_student.pt": {
@@ -21,14 +21,30 @@
    "kmacs_per_pixel": 11.664,
    "gmacs_12mp": 139.968,
    "1024x1024": {
-    "latency_ms_median": 273.5453749774024,
-    "latency_ms_min": 272.3321670200676,
-    "peak_rss_mb": 773.685248
+    "latency_ms_median": 293.62316703191027,
+    "latency_ms_min": 292.95799997635186,
+    "peak_rss_mb": 795.869184
    },
    "2048x2048": {
-    "latency_ms_median": 2299.679459014442,
-    "latency_ms_min": 2299.126250029076,
-    "peak_rss_mb": 1132.70784
+    "latency_ms_median": 2496.098792005796,
+    "latency_ms_min": 2489.0429580118507,
+    "peak_rss_mb": 1198.309376
+   }
+  },
+  "hybrid_student_kd.pt": {
+   "file_size_mb": 2.565541,
+   "params": 637660,
+   "kmacs_per_pixel": 11.664,
+   "gmacs_12mp": 139.968,
+   "1024x1024": {
+    "latency_ms_median": 304.6112500014715,
+    "latency_ms_min": 301.53350002365187,
+    "peak_rss_mb": 799.260672
+   },
+   "2048x2048": {
+    "latency_ms_median": 2334.307333047036,
+    "latency_ms_min": 2310.9238750184886,
+    "peak_rss_mb": 1205.61664
    }
   },
   "hybrid_student_nokd.pt": {
@@ -37,14 +53,14 @@
    "kmacs_per_pixel": 11.664,
    "gmacs_12mp": 139.968,
    "1024x1024": {
-    "latency_ms_median": 293.57291699852794,
-    "latency_ms_min": 292.6556250313297,
-    "peak_rss_mb": 768.688128
+    "latency_ms_median": 294.06549996929243,
+    "latency_ms_min": 292.4310410162434,
+    "peak_rss_mb": 796.196864
    },
    "2048x2048": {
-    "latency_ms_median": 2423.0103330337442,
-    "latency_ms_min": 2421.473041002173,
-    "peak_rss_mb": 1132.347392
+    "latency_ms_median": 2711.8178750388324,
+    "latency_ms_min": 2708.9601249899715,
+    "peak_rss_mb": 1202.896896
    }
   },
   "hybrid_teacher.pt": {
@@ -53,14 +69,14 @@
    "kmacs_per_pixel": 45.216,
    "gmacs_12mp": 542.592,
    "1024x1024": {
-    "latency_ms_median": 579.8600830021314,
-    "latency_ms_min": 574.9947499716654,
-    "peak_rss_mb": 1478.950912
+    "latency_ms_median": 546.5845410362817,
+    "latency_ms_min": 538.9654589816928,
+    "peak_rss_mb": 1510.260736
    },
    "2048x2048": {
-    "latency_ms_median": 5370.412249991205,
-    "latency_ms_min": 5362.477458023932,
-    "peak_rss_mb": 1808.30208
+    "latency_ms_median": 5395.167500013486,
+    "latency_ms_min": 5384.112250001635,
+    "peak_rss_mb": 1876.574208
    }
   },
   "learned.pt": {
@@ -69,14 +85,14 @@
    "kmacs_per_pixel": 44.928,
    "gmacs_12mp": 539.136,
    "1024x1024": {
-    "latency_ms_median": 516.893166990485,
-    "latency_ms_min": 515.185084019322,
-    "peak_rss_mb": 1462.255616
+    "latency_ms_median": 498.510375036858,
+    "latency_ms_min": 486.21845798334107,
+    "peak_rss_mb": 1460.846592
    },
    "2048x2048": {
-    "latency_ms_median": 4744.724249991123,
-    "latency_ms_min": 4732.696999970358,
-    "peak_rss_mb": 1605.533696
+    "latency_ms_median": 4880.981707945466,
+    "latency_ms_min": 4866.949458955787,
+    "peak_rss_mb": 1605.517312
    }
   },
   "learned_student.pt": {
@@ -85,92 +101,92 @@
    "kmacs_per_pixel": 11.52,
    "gmacs_12mp": 138.24,
    "1024x1024": {
-    "latency_ms_median": 231.89420899143443,
-    "latency_ms_min": 231.09912499785423,
-    "peak_rss_mb": 747.241472
+    "latency_ms_median": 210.3613750077784,
+    "latency_ms_min": 207.69883296452463,
+    "peak_rss_mb": 747.68384
    },
    "2048x2048": {
-    "latency_ms_median": 2300.3431250108406,
-    "latency_ms_min": 2287.1036250144243,
-    "peak_rss_mb": 894.07488
+    "latency_ms_median": 2232.756250014063,
+    "latency_ms_min": 2227.423375006765,
+    "peak_rss_mb": 894.337024
    }
   },
   "hybrid_student_fp16.onnx": {
    "file_size_mb": 1.293519,
    "1024x1024": {
-    "latency_ms_median": 163.16920798271894,
-    "latency_ms_min": 162.8337919828482,
-    "peak_rss_mb": 437.321728
+    "latency_ms_median": 196.17262500105426,
+    "latency_ms_min": 193.98741697659716,
+    "peak_rss_mb": 474.513408
    },
    "2048x2048": {
-    "latency_ms_median": 1503.7164160166867,
-    "latency_ms_min": 1491.2194579956122,
-    "peak_rss_mb": 836.124672
+    "latency_ms_median": 1661.0639999853447,
+    "latency_ms_min": 1641.2404999719001,
+    "peak_rss_mb": 955.35104
    }
   },
   "hybrid_student_fp32.onnx": {
    "file_size_mb": 2.563637,
    "1024x1024": {
-    "latency_ms_median": 148.9797909744084,
-    "latency_ms_min": 146.72999997856095,
-    "peak_rss_mb": 376.979456
+    "latency_ms_median": 170.6917499541305,
+    "latency_ms_min": 169.70600001513958,
+    "peak_rss_mb": 413.892608
    },
    "2048x2048": {
-    "latency_ms_median": 1335.1853750064038,
-    "latency_ms_min": 1330.7197079993784,
-    "peak_rss_mb": 782.516224
+    "latency_ms_median": 1494.6032079751603,
+    "latency_ms_min": 1467.33666700311,
+    "peak_rss_mb": 904.216576
    }
   },
   "hybrid_student_int8.onnx": {
-   "file_size_mb": 0.749899,
+   "file_size_mb": 0.749901,
    "1024x1024": {
-    "latency_ms_median": 114.923374960199,
-    "latency_ms_min": 114.18870801571757,
-    "peak_rss_mb": 369.278976
+    "latency_ms_median": 140.8813750022091,
+    "latency_ms_min": 140.04891703370959,
+    "peak_rss_mb": 405.209088
    },
    "2048x2048": {
-    "latency_ms_median": 1053.640957979951,
-    "latency_ms_min": 1053.180249989964,
-    "peak_rss_mb": 772.5056
+    "latency_ms_median": 1203.1525829806924,
+    "latency_ms_min": 1186.400125036016,
+    "peak_rss_mb": 891.650048
    }
   },
   "hybrid_teacher_fp32.onnx": {
    "file_size_mb": 10.18308,
    "1024x1024": {
-    "latency_ms_median": 370.9387500421144,
-    "latency_ms_min": 363.65041602402925,
-    "peak_rss_mb": 517.341184
+    "latency_ms_median": 401.95650001987815,
+    "latency_ms_min": 400.86208301363513,
+    "peak_rss_mb": 552.845312
    },
    "2048x2048": {
-    "latency_ms_median": 3312.905500002671,
-    "latency_ms_min": 3312.287791981362,
-    "peak_rss_mb": 927.105024
+    "latency_ms_median": 3548.3272079727612,
+    "latency_ms_min": 3508.630375028588,
+    "peak_rss_mb": 1046.216704
    }
   },
   "learned_fp32.onnx": {
    "file_size_mb": 10.17556,
    "1024x1024": {
-    "latency_ms_median": 328.87983304681256,
-    "latency_ms_min": 328.16370896762237,
-    "peak_rss_mb": 398.229504
+    "latency_ms_median": 338.0838750163093,
+    "latency_ms_min": 337.48229197226465,
+    "peak_rss_mb": 399.60576
    },
    "2048x2048": {
-    "latency_ms_median": 3126.9674170180224,
-    "latency_ms_min": 3110.1769160013646,
-    "peak_rss_mb": 595.935232
+    "latency_ms_median": 3228.2862919964828,
+    "latency_ms_min": 3213.2945420453325,
+    "peak_rss_mb": 599.81824
    }
   },
   "learned_int8.onnx": {
    "file_size_mb": 2.799975,
    "1024x1024": {
-    "latency_ms_median": 208.69624998886138,
-    "latency_ms_min": 207.1167500107549,
-    "peak_rss_mb": 504.119296
+    "latency_ms_median": 210.01874998910353,
+    "latency_ms_min": 208.0279999645427,
+    "peak_rss_mb": 506.249216
    },
    "2048x2048": {
-    "latency_ms_median": 1992.894458991941,
-    "latency_ms_min": 1991.9740419718437,
-    "peak_rss_mb": 691.798016
+    "latency_ms_median": 2041.0624999785796,
+    "latency_ms_min": 2034.4271250069141,
+    "peak_rss_mb": 693.223424
    }
   }
  }

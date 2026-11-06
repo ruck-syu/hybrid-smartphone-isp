@@ -19,8 +19,7 @@ MAIN = [
 ]
 ABL = [
     ("hybrid_student", "Full hybrid (student, KD)"),
-    ("hybrid_student_nokd", "student trained on ground truth only (no distillation)"),
-    ("hybrid_student_kd", "student trained with distillation from the 2.5M teacher"),
+    ("hybrid_student_nokd", "− knowledge distillation (same student, ground truth only, 180k vs 131k its)"),
     ("hybrid_student__nlf_estimated", "NoiseProfile metadata → noise model estimated from the image"),
     ("hybrid_student__noise_map_x0.25", "noise map under-estimated ×0.25"),
     ("hybrid_student__noise_map_x4", "noise map over-estimated ×4"),
@@ -137,6 +136,17 @@ def main():
         md += ["", "Cells are PSNR (dB) / ΔE2000. `noise_xN`: N× sensor-noise variance injected with the "
                "camera's own noise model (simulates higher ISO); `wb_error_15pct`: AsShotNeutral corrupted by ±15% "
                "(R/B); `no_metadata`: WB, CCM and noise profile removed → adaptive estimation.", ""]
+    md += ["## 7. Notes for reading these results\n",
+           "- **Model selection used validation only.** The deployed student (distilled) was chosen because it "
+           "beat the ground-truth-only student on the validation split (43.43 vs 43.09 dB). On the test split the "
+           "two are equivalent (PSNR −0.05 dB, LPIPS −0.003, ΔE +0.02). We report this rather than re-picking on test.",
+           "- **INT8 is mixed precision.** Per-layer sensitivity analysis (`eval/results/quant_sensitivity.json`) keeps "
+           "the full-resolution U-Net level in float; naive all-layer INT8 loses about 2 dB.",
+           "- **Detail restoration is noise-adaptive.** It switches itself off on every SIDD test image (all are noisy), "
+           "so these tables measure the network path; its effect on clean phone photos is shown in "
+           "docs/FAILURE_ANALYSIS.md §9.",
+           "- **The ground truth is soft** (burst-averaged), which favours smoother outputs in PSNR/SSIM; LPIPS is the "
+           "better guide to perceived detail.", ""]
     (R.parent / "RESULTS.md").write_text("\n".join(md))
 
     # Submission file: first line = USNs, metrics in the order of the problem statement.
@@ -161,10 +171,12 @@ def main():
                      f"{g('hybrid_student_int8.onnx', 'file_size_mb') or 0:.2f} (INT8) |")
         for s in ("1024x1024", "2048x2048"):
             lines.append(f"| Inference latency {s} RAW, CPU (ms) | " + " | ".join(
-                f"{(g(n, s, 'latency_ms_median') or 0):.0f}" for n in ("classical", "learned.pt", "hybrid_student_int8.onnx")) + " |")
+                f"{(g(n, s, 'latency_ms_median') or 0):.0f}" for n in ("classical", "learned_fp32.onnx", "hybrid_student_int8.onnx")) + " |")
             lines.append(f"| Peak memory {s} (MB) | " + " | ".join(
-                f"{(g(n, s, 'peak_rss_mb') or 0):.0f}" for n in ("classical", "learned.pt", "hybrid_student_int8.onnx")) + " |")
-    lines += ["", "Full tables (ablation, per-ISO, per-camera, robustness, efficiency of every variant): eval/RESULTS.md"]
+                f"{(g(n, s, 'peak_rss_mb') or 0):.0f}" for n in ("classical", "learned_fp32.onnx", "hybrid_student_int8.onnx")) + " |")
+    lines += ["", "Latency and memory: whole pipeline (classical stages included) through ONNX Runtime on a laptop CPU "
+              "with 4 threads; the learned ISP is its FP32 ONNX export.",
+              "", "Full tables (ablation, per-ISO, per-camera, robustness, efficiency of every variant): eval/RESULTS.md"]
     (R.parents[1] / f"eval_P2_{a.team}.md").write_text("\n".join(lines) + "\n")
     print("wrote RESULTS.md and", f"eval_P2_{a.team}.md")
 

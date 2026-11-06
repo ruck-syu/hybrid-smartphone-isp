@@ -81,7 +81,8 @@ def main():
     dng = ROOT / "samples" / "dng" / "pixel4a_cc0.dng"
     if dng.exists():
         r = load_dng(dng)
-        from app.app import bayer_bin
+        sys.path.insert(0, str(ROOT / 'app'))
+        from core import bayer_bin
         r = bayer_bin(r, 2)
         rg, _ = C.to_rggb(r.bayer, r.cfa)
         est = estimate_nlf(C.pack_rggb(rg[: rg.shape[0] // 2 * 2, : rg.shape[1] // 2 * 2]))

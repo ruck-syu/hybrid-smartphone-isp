@@ -28,7 +28,19 @@ while colour stays exact and camera-specific. It is compared against a tuned **t
 (Bayer NR, Malvar demosaic, CCM, bilateral/guided denoise, sharpening) and a **fully learned ISP**
 (the same U-Net mapping RAW straight to sRGB).
 
-HEADLINE_RESULTS
+**Held-out test results** (108 full-resolution crops from SIDD scenes never used in training, 5 phone cameras):
+
+| | Traditional ISP | Learned ISP | **Hybrid ISP (ours, INT8)** |
+|---|---|---|---|
+| PSNR ↑ | 33.14 dB | 33.26 dB | **37.97 dB** |
+| SSIM ↑ | 0.916 | 0.924 | **0.930** |
+| Colour error ΔE2000 ↓ | 4.89 | 4.34 | **2.03** |
+| LPIPS ↓ | 0.318 | 0.219 | **0.166** |
+| Parameters / size | – | 2.54M / 10.2 MB | **0.64M / 0.75 MB** |
+| Latency, 1 MP RAW, laptop CPU | 107 ms | 338 ms | 141 ms |
+
+Optimisations: knowledge distillation (2.5M → 0.64M parameters), FP16, and sensitivity-guided mixed-precision INT8.
+Full tables, ablations and robustness: [`eval/RESULTS.md`](eval/RESULTS.md).
 
 ## Repository layout
 
