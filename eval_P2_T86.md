@@ -1,7 +1,7 @@
 1RUA25CSE7013, 1RUA25CSE7015, 1RUA24CSE0535
 
 
-# eval_P2_Astral — Intelligent and Computationally Efficient Smartphone ISP
+# eval_P2_T86 — Intelligent and Computationally Efficient Smartphone ISP
 
 Test set: held-out SIDD scenes, 108 1024×1024 RAW crops, official sRGB ground truth.
 

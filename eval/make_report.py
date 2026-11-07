@@ -99,7 +99,7 @@ def merged_summary(prefix):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--team", default="Astral")
+    ap.add_argument("--team", default="T86")
     ap.add_argument("--usns", default="1RUA25CSE7013, 1RUA25CSE7015, 1RUA24CSE0535")
     a = ap.parse_args()
     main_s = merged_summary("main")
